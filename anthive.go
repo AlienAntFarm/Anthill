@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/alienantfarm/anthive/common"
+	"github.com/gorilla/mux"
 	"net/http"
 	"time"
 )
@@ -19,6 +20,10 @@ func index(w http.ResponseWriter, req *http.Request) {
 
 func main() {
 	addr := fmt.Sprintf("%s:%d", common.Config.Host, common.Config.Port)
+
+	r := mux.NewRouter()
+	r.HandleFunc("/", index)
+
 	s := &http.Server{
 		Addr:           addr,
 		Handler:        http.HandlerFunc(index),
