@@ -9,6 +9,15 @@ import (
 	"github.com/spf13/cobra"
 )
 
+func runAsset(assetName string) {
+	asset := assets.Get(assetName)
+	common.Info.Printf(asset)
+	_, err := db.Conn.Query(asset)
+	if err != nil {
+		common.Error.Fatalf("%s", err)
+	}
+}
+
 var rootCmd = &cobra.Command{
 	Use:   "anthivectl",
 	Short: "Simple cli to deal with various part of anthive",
@@ -21,11 +30,7 @@ var initCmd = &cobra.Command{
 	Use:   "init",
 	Short: "Init tables and types for anthive database",
 	Run: func(cmd *cobra.Command, args []string) {
-		common.Info.Printf("Init tables")
-		_, err := db.Conn.Query(assets.Get("sql/init.sql"))
-		if err != nil {
-			common.Error.Fatalf("%s", err)
-		}
+		runAsset("sql/init.sql")
 	},
 }
 
@@ -33,11 +38,7 @@ var cleanCmd = &cobra.Command{
 	Use:   "clean",
 	Short: "Clean every tables from anthive database",
 	Run: func(cmd *cobra.Command, args []string) {
-		common.Info.Printf("Clean tables")
-		_, err := db.Conn.Query(assets.Get("sql/clean.sql"))
-		if err != nil {
-			common.Error.Fatalf("%s", err)
-		}
+		runAsset("sql/clean.sql")
 	},
 }
 
