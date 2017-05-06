@@ -3,6 +3,7 @@ package api
 import (
 	"github.com/alienantfarm/anthive/common"
 	"github.com/alienantfarm/anthive/db"
+	"github.com/gorilla/mux"
 	"net/http"
 )
 
@@ -60,7 +61,29 @@ func antlingGet(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func antlingGetId(w http.ResponseWriter, r *http.Request) {
+	var err error
+	id := mux.Vars(r)["id"]
+	a := &Antling{}
+
+	query := "SELECT anthive.antling.id "
+	query += "FROM anthive.antling "
+	query += "WHERE anthive.antling.id = $1"
+
+	err = db.Conn.QueryRow(query, id).Scan(&a.Id)
+	if err != nil {
+		common.Error.Println(err)
+		return
+	}
+	err = common.Encode(w, a)
+	if err != nil {
+		common.Error.Println(err)
+		return
+	}
+}
+
 func init() {
 	Router.HandleFunc("/antlings", antlingPost).Methods("POST")
 	Router.HandleFunc("/antlings", antlingGet).Methods("GET")
+	Router.HandleFunc("/antlings/{id:[0-9]+}", antlingGetId).Methods("GET")
 }
