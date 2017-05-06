@@ -29,10 +29,22 @@ var initCmd = &cobra.Command{
 	},
 }
 
+var cleanCmd = &cobra.Command{
+	Use:   "clean",
+	Short: "Clean every tables from anthive database",
+	Run: func(cmd *cobra.Command, args []string) {
+		common.Info.Printf("Clean tables")
+		_, err := db.Conn.Query(assets.Get("sql/clean.sql"))
+		if err != nil {
+			common.Error.Fatalf("%s", err)
+		}
+	},
+}
+
 func main() {
 	rootCmd.AddCommand(initCmd)
+	rootCmd.AddCommand(cleanCmd)
 	if err := rootCmd.Execute(); err != nil {
 		common.Error.Fatalf("%s", err)
 	}
-
 }
