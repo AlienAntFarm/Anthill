@@ -9,7 +9,7 @@ import (
 )
 
 var (
-	Conn = connect()
+	conn = connect()
 )
 
 func connect() *sql.DB {
