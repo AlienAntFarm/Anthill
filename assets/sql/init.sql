@@ -5,6 +5,9 @@ SET search_path TO anthive,public;
 
 -- Creation of tables
 CREATE TABLE IF NOT EXISTS antling (
-  id SERIAL PRIMARY KEY,
-  name VARCHAR(50)
-)
+  id SERIAL PRIMARY KEY
+);
+
+CREATE TABLE IF NOT EXISTS job (
+  id SERIAL PRIMARY KEY
+);
