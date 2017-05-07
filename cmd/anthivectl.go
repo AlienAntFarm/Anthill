@@ -42,9 +42,19 @@ var cleanCmd = &cobra.Command{
 	},
 }
 
+var resetCmd = &cobra.Command{
+	Use:   "reset",
+	Short: "Recreate every tables from anthive database",
+	Run: func(cmd *cobra.Command, args []string) {
+		runAsset("sql/remove.sql")
+		runAsset("sql/init.sql")
+	},
+}
+
 func main() {
 	rootCmd.AddCommand(initCmd)
 	rootCmd.AddCommand(cleanCmd)
+	rootCmd.AddCommand(resetCmd)
 	if err := rootCmd.Execute(); err != nil {
 		common.Error.Fatalf("%s", err)
 	}
