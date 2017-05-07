@@ -18,6 +18,6 @@ func main() {
 		ReadTimeout:    5 * time.Second,
 		WriteTimeout:   5 * time.Second,
 	}
-	common.Info.Printf("Running on http://%s/\n", addr)
+	common.Info.Printf("running on http://%s/\n", addr)
 	common.Error.Fatal(s.ListenAndServe())
 }
