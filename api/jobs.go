@@ -27,6 +27,7 @@ func jobPost(w http.ResponseWriter, r *http.Request) {
 		common.Error.Println(err)
 		return
 	}
+	Scheduler.AddJob(j.Id)
 	err = common.Encode(w, j)
 	if err != nil {
 		common.Error.Println(err)

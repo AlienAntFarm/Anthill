@@ -5,10 +5,12 @@ import (
 	"github.com/alienantfarm/anthive/db"
 	"github.com/gorilla/mux"
 	"net/http"
+	"strconv"
 )
 
 type Antling struct {
-	Id int `json:"id"`
+	Id   int   `json:"id"`
+	Jobs []int `json:"jobs"`
 }
 
 type Antlings struct {
@@ -21,12 +23,13 @@ func antlingPost(w http.ResponseWriter, r *http.Request) {
 	query += "DEFAULT VALUES "
 	query += "RETURNING anthive.antling.id"
 
-	a := &Antling{}
+	a := &Antling{0, []int{}}
 	err = db.Conn.QueryRow(query).Scan(&a.Id)
 	if err != nil {
 		common.Error.Println(err)
 		return
 	}
+	Scheduler.AddAntling(a.Id)
 	err = common.Encode(w, a)
 	if err != nil {
 		common.Error.Println(err)
@@ -63,8 +66,8 @@ func antlingGet(w http.ResponseWriter, r *http.Request) {
 
 func antlingGetId(w http.ResponseWriter, r *http.Request) {
 	var err error
-	id := mux.Vars(r)["id"]
-	a := &Antling{}
+	id, _ := strconv.Atoi(mux.Vars(r)["id"])
+	a := &Antling{0, Scheduler.GetJobs(id)}
 
 	query := "SELECT anthive.antling.id "
 	query += "FROM anthive.antling "

@@ -9,5 +9,6 @@ CREATE TABLE IF NOT EXISTS antling (
 );
 
 CREATE TABLE IF NOT EXISTS job (
-  id SERIAL PRIMARY KEY
+  id SERIAL PRIMARY KEY,
+  fk_antling INTEGER REFERENCES antling (id)
 );
