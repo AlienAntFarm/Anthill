@@ -1,2 +1,2 @@
-DROP TABLE IF EXISTS job;
-DROP TABLE IF EXISTS antling;
+DROP TABLE IF EXISTS anthive.job;
+DROP TABLE IF EXISTS anthive.antling;

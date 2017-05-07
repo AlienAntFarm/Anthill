@@ -11,7 +11,7 @@ import (
 
 func runAsset(assetName string) {
 	asset := assets.Get(assetName)
-	common.Info.Printf(asset)
+	common.Info.Printf("\n%s", asset)
 	_, err := db.Conn.Query(asset)
 	if err != nil {
 		common.Error.Fatalf("%s", err)
