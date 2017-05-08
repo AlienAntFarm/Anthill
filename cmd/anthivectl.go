@@ -3,26 +3,30 @@ package main
 //go:generate go run include.go sql/*
 
 import (
+	"flag"
 	"github.com/alienantfarm/anthive/assets"
 	"github.com/alienantfarm/anthive/db"
-	"github.com/alienantfarm/anthive/utils"
+	"github.com/golang/glog"
 	"github.com/spf13/cobra"
+	"os"
 )
 
 func runAsset(assetName string) {
 	asset := assets.Get(assetName)
-	utils.Info.Printf("\n%s", asset)
+	glog.Infof("\n%s", asset)
 	_, err := db.Conn().Query(asset)
 	if err != nil {
-		utils.Error.Fatalf("%s", err)
+		glog.Fatalf("%s", err)
 	}
 }
 
 var rootCmd = &cobra.Command{
 	Use:   "anthivectl",
 	Short: "Simple cli to deal with various part of anthive",
-	Run: func(cmd *cobra.Command, args []string) {
-		// Do Stuff Here
+	PersistentPreRun: func(cmd *cobra.Command, args []string) {
+		os.Args = os.Args[:1]
+		flag.Set("logtostderr", "true")
+		flag.Parse()
 	},
 }
 
@@ -56,6 +60,6 @@ func main() {
 	rootCmd.AddCommand(cleanCmd)
 	rootCmd.AddCommand(resetCmd)
 	if err := rootCmd.Execute(); err != nil {
-		utils.Error.Fatalf("%s", err)
+		glog.Fatalf("%s", err)
 	}
 }
