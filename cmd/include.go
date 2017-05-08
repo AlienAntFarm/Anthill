@@ -4,7 +4,10 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"github.com/alienantfarm/anthive/utils"
+	_ "github.com/alienantfarm/anthive/utils" // be sure that viper init is run
+	"github.com/golang/glog"
+	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 	"io/ioutil"
 	"os"
 	"path"
@@ -33,27 +36,17 @@ func Get(assetPath string) string {
 }
 `
 
-func parseArgs() []string {
-	flag.Parse()
-	paths := flag.Args()
-
-	return paths
-}
-
-func moveToAssets() {
+func moveToAssets() error {
 	gopath := os.Getenv("GOPATH")
 	if gopath == "" {
 		// if no GOPATH, abort
-		utils.Error.Fatalf("To generate embeded string, we need a GOPATH")
+		return errors.New("To generate embeded string, we need a GOPATH")
 	}
-	assets_path := []string{gopath, "src"}
-	assets_path = append(assets_path, strings.Split(utils.PROJECT, "/")...)
+	assets_path := strings.Split(viper.Get("PROJECT").(string), "/")
+	assets_path = append([]string{gopath, "src"}, assets_path...)
 	assets_path = append(assets_path, "assets")
 
-	err := os.Chdir(path.Join(assets_path...))
-	if err != nil {
-		utils.Error.Fatalf("something bad happened when moving to assets path: %s", err)
-	}
+	return os.Chdir(path.Join(assets_path...))
 }
 
 func normalize(s string) (string, error) {
@@ -77,17 +70,33 @@ func normalize(s string) (string, error) {
 	return strings.Map(translate, s), err
 }
 
-func main() {
+var rootCmd = &cobra.Command{
+	Use:   "include",
+	Short: "foo bar",
+	Run: func(cmd *cobra.Command, args []string) {
+		os.Args = os.Args[:1]
+		flag.Set("logtostderr", "true")
+		flag.Parse()
+		err := generate(args)
+		if err != nil {
+			glog.Fatalf("%s", err)
+		}
+	},
+}
+
+func generate(files []string) (err error) {
 	funcs := template.FuncMap{"normalize": normalize}
 	context := struct{ Assets map[string][]byte }{make(map[string][]byte)}
 
-	files := parseArgs()
-	moveToAssets()
+	err = moveToAssets()
+	if err != nil {
+		return err
+	}
 
 	for _, f := range files {
 		paths, err := filepath.Glob(f)
 		if err != nil {
-			utils.Error.Fatalf(err.Error())
+			glog.Fatalf(err.Error())
 		}
 		for _, p := range paths {
 			err := filepath.Walk(p, func(path string, info os.FileInfo, err error) error {
@@ -97,28 +106,34 @@ func main() {
 				if info.IsDir() || path == "assets.go" {
 					return nil
 				}
-				utils.Info.Printf("parsing: %s", path)
+				glog.Infof("parsing: %s", path)
 				context.Assets[path], err = ioutil.ReadFile(path)
 				return err
 			})
 			if err != nil {
-				utils.Info.Fatalf("%s when traversing %s", err, p)
+				glog.Fatalf("%s when traversing %s", err, p)
 			}
 		}
 	}
 	tmpl, err := template.New("assets_go").Funcs(funcs).Parse(assets_go)
 	if err != nil {
-		utils.Error.Fatalf("error when parsing asset template, %s, aborting...", err)
+		return
 	}
 	out, err := os.Create("assets.go")
 	if err != nil {
-		utils.Error.Fatalf("could not generate assets.go file, %s", err)
+		return
 	}
+	defer out.Close()
 
 	err = tmpl.Execute(out, context)
-	out.Close()
 	if err != nil {
-		os.Remove("assets.go")
-		utils.Error.Fatalf("error when generating the assets.go file, %s, aborting...", err)
+		defer os.Remove("assets.go")
+	}
+	return
+}
+
+func main() {
+	if err := rootCmd.Execute(); err != nil {
+		glog.Fatalf("%s", err)
 	}
 }
