@@ -4,15 +4,15 @@ package main
 
 import (
 	"github.com/alienantfarm/anthive/assets"
-	"github.com/alienantfarm/anthive/utils"
 	"github.com/alienantfarm/anthive/db"
+	"github.com/alienantfarm/anthive/utils"
 	"github.com/spf13/cobra"
 )
 
 func runAsset(assetName string) {
 	asset := assets.Get(assetName)
 	utils.Info.Printf("\n%s", asset)
-	_, err := db.Conn.Query(asset)
+	_, err := db.Conn().Query(asset)
 	if err != nil {
 		utils.Error.Fatalf("%s", err)
 	}

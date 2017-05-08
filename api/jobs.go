@@ -23,7 +23,7 @@ func jobPost(w http.ResponseWriter, r *http.Request) {
 	query += "RETURNING anthive.job.id"
 
 	j := &Job{}
-	err = db.Conn.QueryRow(query).Scan(&j.Id)
+	err = db.Conn().QueryRow(query).Scan(&j.Id)
 	if err != nil {
 		glog.Errorln(err)
 		return
@@ -40,7 +40,7 @@ func jobGet(w http.ResponseWriter, r *http.Request) {
 	var err error
 	query := "SELECT anthive.job.id "
 	query += "FROM anthive.job"
-	rows, err := db.Conn.Query(query)
+	rows, err := db.Conn().Query(query)
 	if err != nil {
 		glog.Errorln(err)
 		return
@@ -72,7 +72,7 @@ func jobGetId(w http.ResponseWriter, r *http.Request) {
 	query += "FROM anthive.job "
 	query += "WHERE anthive.job.id = $1"
 
-	err = db.Conn.QueryRow(query, id).Scan(&j.Id)
+	err = db.Conn().QueryRow(query, id).Scan(&j.Id)
 	if err != nil {
 		glog.Errorln(err)
 		return

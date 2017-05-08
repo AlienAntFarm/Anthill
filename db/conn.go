@@ -9,9 +9,7 @@ import (
 	"regexp"
 )
 
-var (
-	Conn = connect()
-)
+var conn *sql.DB
 
 func connect() *sql.DB {
 	dbConfig := utils.Config.Database
@@ -22,10 +20,7 @@ func connect() *sql.DB {
 		dbConfig.Name, dbConfig.User, dbConfig.Password, dbConfig.Host, dbConfig.Port,
 	)
 
-	glog.Infof(
-		"Connecting to database with following options: %s",
-		re.ReplaceAllString(connString, "password=******* "),
-	)
+	glog.Infof("db connection: %s", re.ReplaceAllString(connString, "password=******* "))
 	db, err := sql.Open("postgres", connString)
 
 	if err != nil {
@@ -34,4 +29,11 @@ func connect() *sql.DB {
 		)
 	}
 	return db
+}
+
+func Conn() *sql.DB {
+	if conn == nil {
+		conn = connect()
+	}
+	return conn
 }

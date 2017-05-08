@@ -19,7 +19,8 @@ func main() {
 		flag.Set("v", "10") // totally arbitrary but who cares!
 	}
 	flag.Parse()
-	glog.V(1).Infoln("Debug mode enabled")
+	glog.V(1).Infoln("debug mode enabled")
+	api.InitScheduler()
 
 	addr := fmt.Sprintf("%s:%d", utils.Config.Host, utils.Config.Port)
 
@@ -30,6 +31,7 @@ func main() {
 		ReadTimeout:    5 * time.Second,
 		WriteTimeout:   5 * time.Second,
 	}
+
 	glog.Infof("running on http://%s/\n", addr)
 	glog.Errorf("%s", s.ListenAndServe())
 }

@@ -10,7 +10,7 @@ import (
 )
 
 var Router = mux.NewRouter()
-var Scheduler = newScheduler()
+var Scheduler *scheduler
 
 type scheduler struct {
 	antlings []int
@@ -19,13 +19,23 @@ type scheduler struct {
 	seed     *rand.Rand
 }
 
+func InitScheduler() {
+	if Scheduler != nil {
+		glog.Fatalf("scheduler already inited, something bad is happening")
+	} else {
+		Scheduler = newScheduler()
+		go Scheduler.start()
+	}
+}
+
 func newScheduler() *scheduler {
+	glog.Infoln("init scheduler")
 	antlings := []int{}
 	queue := make(map[int][]int)
 
 	query := "SELECT anthive.antling.id "
 	query += "FROM anthive.antling"
-	rows, err := db.Conn.Query(query)
+	rows, err := db.Conn().Query(query)
 	if err != nil {
 		glog.Fatalln(err)
 	}
@@ -44,7 +54,7 @@ func newScheduler() *scheduler {
 	query = "SELECT id, fk_antling "
 	query += "FROM anthive.job "
 	query += "WHERE fk_antling IS NOT NULL"
-	rows, err = db.Conn.Query(query)
+	rows, err = db.Conn().Query(query)
 	if err != nil {
 		glog.Fatalln(err)
 	}
@@ -64,12 +74,12 @@ func newScheduler() *scheduler {
 
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 	s := &scheduler{antlings, queue, make(chan int, 1), r}
-	go s.start()
 
 	return s
 }
 
 func (s *scheduler) start() {
+	glog.Infoln("starting scheduler")
 	query := "UPDATE anthive.job "
 	query += "SET fk_antling = $1 "
 	query += "WHERE anthive.job.id = $2"
@@ -83,7 +93,7 @@ func (s *scheduler) start() {
 		antlingId := s.antlings[s.seed.Intn(len(s.antlings))]
 		glog.Infof("adding job %d to antling %d", jobId, antlingId)
 
-		row := db.Conn.QueryRow(query, antlingId, jobId)
+		row := db.Conn().QueryRow(query, antlingId, jobId)
 		err := row.Scan()
 		if err != nil && err != sql.ErrNoRows {
 			glog.Errorln(err)

@@ -25,7 +25,7 @@ func antlingPost(w http.ResponseWriter, r *http.Request) {
 	query += "RETURNING anthive.antling.id"
 
 	a := &Antling{0, []int{}}
-	err = db.Conn.QueryRow(query).Scan(&a.Id)
+	err = db.Conn().QueryRow(query).Scan(&a.Id)
 	if err != nil {
 		glog.Errorln(err)
 		return
@@ -42,7 +42,7 @@ func antlingGet(w http.ResponseWriter, r *http.Request) {
 	var err error
 	query := "SELECT anthive.antling.id "
 	query += "FROM anthive.antling"
-	rows, err := db.Conn.Query(query)
+	rows, err := db.Conn().Query(query)
 	if err != nil {
 		glog.Errorln(err)
 		return
@@ -74,7 +74,7 @@ func antlingGetId(w http.ResponseWriter, r *http.Request) {
 	query += "FROM anthive.antling "
 	query += "WHERE anthive.antling.id = $1"
 
-	err = db.Conn.QueryRow(query, id).Scan(&a.Id)
+	err = db.Conn().QueryRow(query, id).Scan(&a.Id)
 	if err != nil {
 		glog.Errorln(err)
 		return
