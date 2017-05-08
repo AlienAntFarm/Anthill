@@ -1,9 +1,10 @@
 package utils
 
 import (
-	"encoding/json"
+	"flag"
+	"fmt"
 	"github.com/golang/glog"
-	"os"
+	"github.com/spf13/viper"
 )
 
 type Configuration struct {
@@ -24,25 +25,31 @@ type Configuration struct {
 	} `json:"assets"`
 }
 
-var Config = getConfig()
+var config *Configuration
 
-func getConfig() (config Configuration) {
-	configFile, err := os.Open(getConfigPath())
-	if err != nil {
-		glog.Fatalf("when reading config file: %s", err)
-	}
-	defer configFile.Close()
+func Config() *Configuration {
+	if config == nil {
+		config = &Configuration{}
 
-	jsonParser := json.NewDecoder(configFile)
-	if err = jsonParser.Decode(&config); err != nil {
-		glog.Fatalf("when unmarshalling the json: %s", err)
+		viper.SetConfigName("config")
+		viper.AddConfigPath(fmt.Sprintf("$%s/", viper.Get("CONFIG")))
+		viper.AddConfigPath(".")
+
+		err := viper.ReadInConfig()
+		if err != nil {
+			flag.Parse() // flags are not yet parsed, avoid error from glog
+			glog.Fatalf("when reading config file: %s", err)
+		}
+		err = viper.Unmarshal(config)
+		if err != nil {
+			flag.Parse() // flags are not yet parsed, avoid error from glog
+			glog.Fatalf("when unmarshalling the json: %s", err)
+		}
 	}
-	return
+	return config
 }
 
-func getConfigPath() (configPath string) {
-	if configPath = os.Getenv(CONFIG); configPath == "" {
-		configPath = "config.json"
-	}
-	return
+func init() {
+	viper.Set("PROJECT", "github.com/alienantfarm/anthive")
+	viper.Set("CONFIG", "ANTHIVE_CONFIG")
 }

@@ -14,15 +14,17 @@ import (
 func main() {
 	// reinit args for glog
 	os.Args = os.Args[:1]
+	conf := utils.Config()
+
 	flag.Set("logtostderr", "true")
-	if utils.Config.Debug {
+	if conf.Debug {
 		flag.Set("v", "10") // totally arbitrary but who cares!
 	}
 	flag.Parse()
 	glog.V(1).Infoln("debug mode enabled")
 	api.InitScheduler()
 
-	addr := fmt.Sprintf("%s:%d", utils.Config.Host, utils.Config.Port)
+	addr := fmt.Sprintf("%s:%d", conf.Host, conf.Port)
 
 	s := &http.Server{
 		Addr:           addr,
