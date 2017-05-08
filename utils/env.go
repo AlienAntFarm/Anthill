@@ -1,4 +1,4 @@
-package common
+package utils
 
 const (
 	CONFIG  = "ANTHIVE_CONFIG"

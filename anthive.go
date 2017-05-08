@@ -3,13 +3,13 @@ package main
 import (
 	"fmt"
 	"github.com/alienantfarm/anthive/api"
-	"github.com/alienantfarm/anthive/common"
+	"github.com/alienantfarm/anthive/utils"
 	"net/http"
 	"time"
 )
 
 func main() {
-	addr := fmt.Sprintf("%s:%d", common.Config.Host, common.Config.Port)
+	addr := fmt.Sprintf("%s:%d", utils.Config.Host, utils.Config.Port)
 
 	s := &http.Server{
 		Addr:           addr,
@@ -18,6 +18,6 @@ func main() {
 		ReadTimeout:    5 * time.Second,
 		WriteTimeout:   5 * time.Second,
 	}
-	common.Info.Printf("running on http://%s/\n", addr)
-	common.Error.Fatal(s.ListenAndServe())
+	utils.Info.Printf("running on http://%s/\n", addr)
+	utils.Error.Fatal(s.ListenAndServe())
 }

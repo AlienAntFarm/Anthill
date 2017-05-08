@@ -1,7 +1,7 @@
 package api
 
 import (
-	"github.com/alienantfarm/anthive/common"
+	"github.com/alienantfarm/anthive/utils"
 	"github.com/alienantfarm/anthive/db"
 	"github.com/gorilla/mux"
 	"net/http"
@@ -26,13 +26,13 @@ func antlingPost(w http.ResponseWriter, r *http.Request) {
 	a := &Antling{0, []int{}}
 	err = db.Conn.QueryRow(query).Scan(&a.Id)
 	if err != nil {
-		common.Error.Println(err)
+		utils.Error.Println(err)
 		return
 	}
 	Scheduler.AddAntling(a.Id)
-	err = common.Encode(w, a)
+	err = utils.Encode(w, a)
 	if err != nil {
-		common.Error.Println(err)
+		utils.Error.Println(err)
 		return
 	}
 }
@@ -43,7 +43,7 @@ func antlingGet(w http.ResponseWriter, r *http.Request) {
 	query += "FROM anthive.antling"
 	rows, err := db.Conn.Query(query)
 	if err != nil {
-		common.Error.Println(err)
+		utils.Error.Println(err)
 		return
 	}
 	defer rows.Close()
@@ -52,14 +52,14 @@ func antlingGet(w http.ResponseWriter, r *http.Request) {
 		antling := &Antling{}
 		err = rows.Scan(&antling.Id)
 		if err != nil {
-			common.Error.Println(err)
+			utils.Error.Println(err)
 			return
 		}
 		antlings = append(antlings, antling)
 	}
-	err = common.Encode(w, Antlings{antlings})
+	err = utils.Encode(w, Antlings{antlings})
 	if err != nil {
-		common.Error.Println(err)
+		utils.Error.Println(err)
 		return
 	}
 }
@@ -75,12 +75,12 @@ func antlingGetId(w http.ResponseWriter, r *http.Request) {
 
 	err = db.Conn.QueryRow(query, id).Scan(&a.Id)
 	if err != nil {
-		common.Error.Println(err)
+		utils.Error.Println(err)
 		return
 	}
-	err = common.Encode(w, a)
+	err = utils.Encode(w, a)
 	if err != nil {
-		common.Error.Println(err)
+		utils.Error.Println(err)
 		return
 	}
 }

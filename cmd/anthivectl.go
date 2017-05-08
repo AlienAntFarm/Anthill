@@ -4,17 +4,17 @@ package main
 
 import (
 	"github.com/alienantfarm/anthive/assets"
-	"github.com/alienantfarm/anthive/common"
+	"github.com/alienantfarm/anthive/utils"
 	"github.com/alienantfarm/anthive/db"
 	"github.com/spf13/cobra"
 )
 
 func runAsset(assetName string) {
 	asset := assets.Get(assetName)
-	common.Info.Printf("\n%s", asset)
+	utils.Info.Printf("\n%s", asset)
 	_, err := db.Conn.Query(asset)
 	if err != nil {
-		common.Error.Fatalf("%s", err)
+		utils.Error.Fatalf("%s", err)
 	}
 }
 
@@ -56,6 +56,6 @@ func main() {
 	rootCmd.AddCommand(cleanCmd)
 	rootCmd.AddCommand(resetCmd)
 	if err := rootCmd.Execute(); err != nil {
-		common.Error.Fatalf("%s", err)
+		utils.Error.Fatalf("%s", err)
 	}
 }

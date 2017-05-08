@@ -4,7 +4,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"github.com/alienantfarm/anthive/common"
+	"github.com/alienantfarm/anthive/utils"
 	"io/ioutil"
 	"os"
 	"path"
@@ -44,15 +44,15 @@ func moveToAssets() {
 	gopath := os.Getenv("GOPATH")
 	if gopath == "" {
 		// if no GOPATH, abort
-		common.Error.Fatalf("To generate embeded string, we need a GOPATH")
+		utils.Error.Fatalf("To generate embeded string, we need a GOPATH")
 	}
 	assets_path := []string{gopath, "src"}
-	assets_path = append(assets_path, strings.Split(common.PROJECT, "/")...)
+	assets_path = append(assets_path, strings.Split(utils.PROJECT, "/")...)
 	assets_path = append(assets_path, "assets")
 
 	err := os.Chdir(path.Join(assets_path...))
 	if err != nil {
-		common.Error.Fatalf("something bad happened when moving to assets path: %s", err)
+		utils.Error.Fatalf("something bad happened when moving to assets path: %s", err)
 	}
 }
 
@@ -87,7 +87,7 @@ func main() {
 	for _, f := range files {
 		paths, err := filepath.Glob(f)
 		if err != nil {
-			common.Error.Fatalf(err.Error())
+			utils.Error.Fatalf(err.Error())
 		}
 		for _, p := range paths {
 			err := filepath.Walk(p, func(path string, info os.FileInfo, err error) error {
@@ -97,28 +97,28 @@ func main() {
 				if info.IsDir() || path == "assets.go" {
 					return nil
 				}
-				common.Info.Printf("parsing: %s", path)
+				utils.Info.Printf("parsing: %s", path)
 				context.Assets[path], err = ioutil.ReadFile(path)
 				return err
 			})
 			if err != nil {
-				common.Info.Fatalf("%s when traversing %s", err, p)
+				utils.Info.Fatalf("%s when traversing %s", err, p)
 			}
 		}
 	}
 	tmpl, err := template.New("assets_go").Funcs(funcs).Parse(assets_go)
 	if err != nil {
-		common.Error.Fatalf("error when parsing asset template, %s, aborting...", err)
+		utils.Error.Fatalf("error when parsing asset template, %s, aborting...", err)
 	}
 	out, err := os.Create("assets.go")
 	if err != nil {
-		common.Error.Fatalf("could not generate assets.go file, %s", err)
+		utils.Error.Fatalf("could not generate assets.go file, %s", err)
 	}
 
 	err = tmpl.Execute(out, context)
 	out.Close()
 	if err != nil {
 		os.Remove("assets.go")
-		common.Error.Fatalf("error when generating the assets.go file, %s, aborting...", err)
+		utils.Error.Fatalf("error when generating the assets.go file, %s, aborting...", err)
 	}
 }
