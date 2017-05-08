@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"github.com/alienantfarm/anthive/utils"
+	"github.com/golang/glog"
 	_ "github.com/lib/pq"
 	"regexp"
 )
@@ -21,14 +22,14 @@ func connect() *sql.DB {
 		dbConfig.Name, dbConfig.User, dbConfig.Password, dbConfig.Host, dbConfig.Port,
 	)
 
-	utils.Info.Printf(
+	glog.Infof(
 		"Connecting to database with following options: %s",
 		re.ReplaceAllString(connString, "password=******* "),
 	)
 	db, err := sql.Open("postgres", connString)
 
 	if err != nil {
-		utils.Error.Fatalf(
+		glog.Fatalf(
 			"Something bad happened during database connection: %s", err,
 		)
 	}

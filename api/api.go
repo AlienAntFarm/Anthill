@@ -2,8 +2,8 @@ package api
 
 import (
 	"database/sql"
-	"github.com/alienantfarm/anthive/utils"
 	"github.com/alienantfarm/anthive/db"
+	"github.com/golang/glog"
 	"github.com/gorilla/mux"
 	"math/rand"
 	"time"
@@ -27,7 +27,7 @@ func newScheduler() *scheduler {
 	query += "FROM anthive.antling"
 	rows, err := db.Conn.Query(query)
 	if err != nil {
-		utils.Error.Fatalln(err)
+		glog.Fatalln(err)
 	}
 	defer rows.Close()
 
@@ -35,7 +35,7 @@ func newScheduler() *scheduler {
 		var antlingId int
 		err = rows.Scan(&antlingId)
 		if err != nil {
-			utils.Error.Fatalln(err)
+			glog.Fatalln(err)
 		}
 		antlings = append(antlings, antlingId)
 		queue[antlingId] = []int{}
@@ -46,7 +46,7 @@ func newScheduler() *scheduler {
 	query += "WHERE fk_antling IS NOT NULL"
 	rows, err = db.Conn.Query(query)
 	if err != nil {
-		utils.Error.Fatalln(err)
+		glog.Fatalln(err)
 	}
 	defer rows.Close()
 
@@ -55,11 +55,11 @@ func newScheduler() *scheduler {
 		var jobId int
 		err = rows.Scan(&jobId, &antlingId)
 		if err != nil {
-			utils.Error.Fatalln(err)
+			glog.Fatalln(err)
 		}
 		queue[antlingId] = append(queue[antlingId], jobId)
 		msg := "retrieved job %d from db and assign it to antling %d"
-		utils.Info.Printf(msg, jobId, antlingId)
+		glog.Infof(msg, jobId, antlingId)
 	}
 
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
@@ -81,12 +81,12 @@ func (s *scheduler) start() {
 		}
 		// just choose an antling randomly and assign it the job
 		antlingId := s.antlings[s.seed.Intn(len(s.antlings))]
-		utils.Info.Printf("adding job %d to antling %d", jobId, antlingId)
+		glog.Infof("adding job %d to antling %d", jobId, antlingId)
 
 		row := db.Conn.QueryRow(query, antlingId, jobId)
 		err := row.Scan()
 		if err != nil && err != sql.ErrNoRows {
-			utils.Error.Printf("%s", err.Error())
+			glog.Errorln(err)
 			return
 		}
 
@@ -101,7 +101,7 @@ func (s *scheduler) AddJob(jobId int) {
 func (s *scheduler) AddAntling(antlingId int) {
 	msg := "adding antling %d to cluster, cluster size is now %d"
 	s.antlings = append(s.antlings, antlingId)
-	utils.Info.Printf(msg, antlingId, len(s.antlings))
+	glog.Infof(msg, antlingId, len(s.antlings))
 	s.queue[antlingId] = []int{}
 }
 

@@ -1,8 +1,9 @@
 package api
 
 import (
-	"github.com/alienantfarm/anthive/utils"
 	"github.com/alienantfarm/anthive/db"
+	"github.com/alienantfarm/anthive/utils"
+	"github.com/golang/glog"
 	"github.com/gorilla/mux"
 	"net/http"
 )
@@ -24,13 +25,13 @@ func jobPost(w http.ResponseWriter, r *http.Request) {
 	j := &Job{}
 	err = db.Conn.QueryRow(query).Scan(&j.Id)
 	if err != nil {
-		utils.Error.Println(err)
+		glog.Errorln(err)
 		return
 	}
 	Scheduler.AddJob(j.Id)
 	err = utils.Encode(w, j)
 	if err != nil {
-		utils.Error.Println(err)
+		glog.Errorln(err)
 		return
 	}
 }
@@ -41,7 +42,7 @@ func jobGet(w http.ResponseWriter, r *http.Request) {
 	query += "FROM anthive.job"
 	rows, err := db.Conn.Query(query)
 	if err != nil {
-		utils.Error.Println(err)
+		glog.Errorln(err)
 		return
 	}
 	defer rows.Close()
@@ -50,14 +51,14 @@ func jobGet(w http.ResponseWriter, r *http.Request) {
 		job := &Job{}
 		err = rows.Scan(&job.Id)
 		if err != nil {
-			utils.Error.Println(err)
+			glog.Errorln(err)
 			return
 		}
 		jobs = append(jobs, job)
 	}
 	err = utils.Encode(w, Jobs{jobs})
 	if err != nil {
-		utils.Error.Println(err)
+		glog.Errorln(err)
 		return
 	}
 }
@@ -73,12 +74,12 @@ func jobGetId(w http.ResponseWriter, r *http.Request) {
 
 	err = db.Conn.QueryRow(query, id).Scan(&j.Id)
 	if err != nil {
-		utils.Error.Println(err)
+		glog.Errorln(err)
 		return
 	}
 	err = utils.Encode(w, j)
 	if err != nil {
-		utils.Error.Println(err)
+		glog.Errorln(err)
 		return
 	}
 }
