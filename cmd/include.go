@@ -71,12 +71,15 @@ func normalize(s string) (string, error) {
 }
 
 var rootCmd = &cobra.Command{
-	Use:   "include",
-	Short: "foo bar",
-	Run: func(cmd *cobra.Command, args []string) {
+	Use:     "include",
+	Short:   "parse assets glob under assets dir",
+	Example: "include sql/*.sql: will parse all assets in assets/sql dir \n\twhich have .sql as file extension",
+	PersistentPreRun: func(cmd *cobra.Command, args []string) {
 		os.Args = os.Args[:1]
 		flag.Set("logtostderr", "true")
 		flag.Parse()
+	},
+	Run: func(cmd *cobra.Command, args []string) {
 		err := generate(args)
 		if err != nil {
 			glog.Fatalf("%s", err)
