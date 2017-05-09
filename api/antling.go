@@ -28,20 +28,18 @@ func antlingPost(w http.ResponseWriter, r *http.Request) {
 	err = db.Conn().QueryRow(query).Scan(&a.Id)
 	if err != nil {
 		glog.Errorln(err)
-		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 	Scheduler.AddAntling(a.Id)
 	if glog.V(2) {
 		glog.Infof("created antling with id %d", a.Id)
 	}
+	w.WriteHeader(http.StatusCreated)
 	err = utils.Encode(w, a)
 	if err != nil {
-		glog.Errorln(err)
-		w.WriteHeader(http.StatusInternalServerError)
+		glog.Errorf("%s", err)
 		return
 	}
-	w.WriteHeader(http.StatusCreated)
 }
 
 func antlingGet(w http.ResponseWriter, r *http.Request) {

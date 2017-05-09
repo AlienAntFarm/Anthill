@@ -6,7 +6,11 @@ import (
 )
 
 func Encode(w http.ResponseWriter, i interface{}) error {
-	w.Header().Add("Content-Type", "application/json")
-	e := json.NewEncoder(w)
-	return e.Encode(i)
+	err := json.NewEncoder(w).Encode(i)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+	} else {
+		w.Header().Add("Content-Type", "application/json")
+	}
+	return err
 }
