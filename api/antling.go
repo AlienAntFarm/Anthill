@@ -31,6 +31,9 @@ func antlingPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	Scheduler.AddAntling(a.Id)
+	if glog.V(2) {
+		glog.Infof("created antling with id %d", a.Id)
+	}
 	err = utils.Encode(w, a)
 	if err != nil {
 		glog.Errorln(err)
