@@ -28,6 +28,7 @@ func antlingPost(w http.ResponseWriter, r *http.Request) {
 	err = db.Conn().QueryRow(query).Scan(&a.Id)
 	if err != nil {
 		glog.Errorln(err)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 	Scheduler.AddAntling(a.Id)
@@ -37,8 +38,10 @@ func antlingPost(w http.ResponseWriter, r *http.Request) {
 	err = utils.Encode(w, a)
 	if err != nil {
 		glog.Errorln(err)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+	w.WriteHeader(http.StatusCreated)
 }
 
 func antlingGet(w http.ResponseWriter, r *http.Request) {
