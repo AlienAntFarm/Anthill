@@ -3,6 +3,7 @@ package api
 import (
 	"database/sql"
 	"github.com/alienantfarm/anthive/db"
+	"github.com/alienantfarm/anthive/utils/structs"
 	"github.com/golang/glog"
 	"github.com/gorilla/mux"
 	"math/rand"
@@ -14,7 +15,7 @@ var Scheduler *scheduler
 
 type scheduler struct {
 	antlings []int
-	queue    map[int][]*Job
+	queue    map[int][]*structs.Job
 	channel  chan int
 	seed     *rand.Rand
 }
@@ -31,7 +32,7 @@ func InitScheduler() {
 func newScheduler() *scheduler {
 	glog.Infoln("init scheduler")
 	antlings := []int{}
-	queue := make(map[int][]*Job)
+	queue := make(map[int][]*structs.Job)
 
 	query := "SELECT anthive.antling.id "
 	query += "FROM anthive.antling"
@@ -48,7 +49,7 @@ func newScheduler() *scheduler {
 			glog.Fatalln(err)
 		}
 		antlings = append(antlings, antlingId)
-		queue[antlingId] = []*Job{}
+		queue[antlingId] = []*structs.Job{}
 	}
 
 	query = "SELECT id, fk_antling "
@@ -62,7 +63,7 @@ func newScheduler() *scheduler {
 
 	for rows.Next() {
 		var id int
-		job := &Job{}
+		job := &structs.Job{}
 		err = rows.Scan(&job.Id, &id)
 		if err != nil {
 			glog.Fatalln(err)
@@ -100,7 +101,7 @@ func (s *scheduler) start() {
 			return
 		}
 
-		s.queue[id] = append(s.queue[id], &Job{Id: job})
+		s.queue[id] = append(s.queue[id], &structs.Job{Id: job})
 	}
 }
 
@@ -112,14 +113,14 @@ func (s *scheduler) AddAntling(id int) {
 	msg := "adding antling %d to cluster, cluster size is now %d"
 	s.antlings = append(s.antlings, id)
 	glog.Infof(msg, id, len(s.antlings))
-	s.queue[id] = []*Job{}
+	s.queue[id] = []*structs.Job{}
 }
 
-func (s *scheduler) GetJobs(id int) []*Job {
+func (s *scheduler) GetJobs(id int) []*structs.Job {
 	jobs := s.queue[id]
 	if jobs != nil {
 		return jobs
 	} else {
-		return []*Job{}
+		return []*structs.Job{}
 	}
 }

@@ -3,20 +3,12 @@ package api
 import (
 	"github.com/alienantfarm/anthive/db"
 	"github.com/alienantfarm/anthive/utils"
+	"github.com/alienantfarm/anthive/utils/structs"
 	"github.com/golang/glog"
 	"github.com/gorilla/mux"
 	"net/http"
 	"strconv"
 )
-
-type Antling struct {
-	Id   int    `json:"id"`
-	Jobs []*Job `json:"jobs"`
-}
-
-type Antlings struct {
-	Antlings []*Antling `json:"antlings"`
-}
 
 func antlingPost(w http.ResponseWriter, r *http.Request) {
 	var err error
@@ -24,7 +16,7 @@ func antlingPost(w http.ResponseWriter, r *http.Request) {
 	query += "DEFAULT VALUES "
 	query += "RETURNING anthive.antling.id"
 
-	a := &Antling{0, []*Job{}}
+	a := &structs.Antling{0, []*structs.Job{}}
 	err = db.Conn().QueryRow(query).Scan(&a.Id)
 	if err != nil {
 		glog.Errorln(err)
@@ -52,9 +44,9 @@ func antlingGet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer rows.Close()
-	antlings := []*Antling{}
+	antlings := []*structs.Antling{}
 	for rows.Next() {
-		antling := &Antling{}
+		antling := &structs.Antling{}
 		err = rows.Scan(&antling.Id)
 		if err != nil {
 			glog.Errorln(err)
@@ -62,7 +54,7 @@ func antlingGet(w http.ResponseWriter, r *http.Request) {
 		}
 		antlings = append(antlings, antling)
 	}
-	err = utils.Encode(w, Antlings{antlings})
+	err = utils.Encode(w, structs.Antlings{antlings})
 	if err != nil {
 		glog.Errorln(err)
 		return
@@ -72,7 +64,7 @@ func antlingGet(w http.ResponseWriter, r *http.Request) {
 func antlingGetId(w http.ResponseWriter, r *http.Request) {
 	var err error
 	id, _ := strconv.Atoi(mux.Vars(r)["id"])
-	a := &Antling{0, Scheduler.GetJobs(id)}
+	a := &structs.Antling{0, Scheduler.GetJobs(id)}
 
 	query := "SELECT anthive.antling.id "
 	query += "FROM anthive.antling "

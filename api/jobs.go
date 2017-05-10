@@ -3,33 +3,11 @@ package api
 import (
 	"github.com/alienantfarm/anthive/db"
 	"github.com/alienantfarm/anthive/utils"
+	"github.com/alienantfarm/anthive/utils/structs"
 	"github.com/golang/glog"
 	"github.com/gorilla/mux"
 	"net/http"
 )
-
-const (
-	JOB_NEW = iota
-	JOB_PENDING
-	JOB_FINISH
-	JOB_ERROR
-)
-
-var JOB_STATES = [...]string{
-	"NEW",
-	"PENDING",
-	"FINISH",
-	"ERROR",
-}
-
-type Job struct {
-	Id    int `json:"id"`
-	State int `json:"state"`
-}
-
-type Jobs struct {
-	Jobs []*Job `json:"jobs"`
-}
 
 func jobPost(w http.ResponseWriter, r *http.Request) {
 	var err error
@@ -37,7 +15,7 @@ func jobPost(w http.ResponseWriter, r *http.Request) {
 	query += "DEFAULT VALUES "
 	query += "RETURNING anthive.job.id"
 
-	j := &Job{}
+	j := &structs.Job{}
 	err = db.Conn().QueryRow(query).Scan(&j.Id)
 	if err != nil {
 		glog.Errorln(err)
@@ -61,9 +39,9 @@ func jobGet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer rows.Close()
-	jobs := []*Job{}
+	jobs := []*structs.Job{}
 	for rows.Next() {
-		job := &Job{}
+		job := &structs.Job{}
 		err = rows.Scan(&job.Id)
 		if err != nil {
 			glog.Errorln(err)
@@ -71,7 +49,7 @@ func jobGet(w http.ResponseWriter, r *http.Request) {
 		}
 		jobs = append(jobs, job)
 	}
-	err = utils.Encode(w, Jobs{jobs})
+	err = utils.Encode(w, structs.Jobs{jobs})
 	if err != nil {
 		glog.Errorln(err)
 		return
@@ -81,7 +59,7 @@ func jobGet(w http.ResponseWriter, r *http.Request) {
 func jobGetId(w http.ResponseWriter, r *http.Request) {
 	var err error
 	id := mux.Vars(r)["id"]
-	j := &Job{}
+	j := &structs.Job{}
 
 	query := "SELECT anthive.job.id "
 	query += "FROM anthive.job "
