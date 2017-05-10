@@ -14,7 +14,7 @@ var Scheduler *scheduler
 
 type scheduler struct {
 	antlings []int
-	queue    map[int][]int
+	queue    map[int][]*Job
 	channel  chan int
 	seed     *rand.Rand
 }
@@ -31,7 +31,7 @@ func InitScheduler() {
 func newScheduler() *scheduler {
 	glog.Infoln("init scheduler")
 	antlings := []int{}
-	queue := make(map[int][]int)
+	queue := make(map[int][]*Job)
 
 	query := "SELECT anthive.antling.id "
 	query += "FROM anthive.antling"
@@ -48,7 +48,7 @@ func newScheduler() *scheduler {
 			glog.Fatalln(err)
 		}
 		antlings = append(antlings, antlingId)
-		queue[antlingId] = []int{}
+		queue[antlingId] = []*Job{}
 	}
 
 	query = "SELECT id, fk_antling "
@@ -61,15 +61,15 @@ func newScheduler() *scheduler {
 	defer rows.Close()
 
 	for rows.Next() {
-		var antlingId int
-		var jobId int
-		err = rows.Scan(&jobId, &antlingId)
+		var id int
+		job := &Job{}
+		err = rows.Scan(&job.Id, &id)
 		if err != nil {
 			glog.Fatalln(err)
 		}
-		queue[antlingId] = append(queue[antlingId], jobId)
+		queue[id] = append(queue[id], job)
 		msg := "retrieved job %d from db and assign it to antling %d"
-		glog.Infof(msg, jobId, antlingId)
+		glog.Infof(msg, job.Id, id)
 	}
 
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
@@ -84,42 +84,42 @@ func (s *scheduler) start() {
 	query += "SET fk_antling = $1 "
 	query += "WHERE anthive.job.id = $2"
 
-	for jobId := range s.channel {
+	for job := range s.channel {
 		// if no antling, just pass
 		if len(s.antlings) == 0 {
 			continue
 		}
 		// just choose an antling randomly and assign it the job
-		antlingId := s.antlings[s.seed.Intn(len(s.antlings))]
-		glog.Infof("adding job %d to antling %d", jobId, antlingId)
+		id := s.antlings[s.seed.Intn(len(s.antlings))]
+		glog.Infof("adding job %d to antling %d", job, id)
 
-		row := db.Conn().QueryRow(query, antlingId, jobId)
+		row := db.Conn().QueryRow(query, id, job)
 		err := row.Scan()
 		if err != nil && err != sql.ErrNoRows {
 			glog.Errorln(err)
 			return
 		}
 
-		s.queue[antlingId] = append(s.queue[antlingId], jobId)
+		s.queue[id] = append(s.queue[id], &Job{job})
 	}
 }
 
-func (s *scheduler) AddJob(jobId int) {
-	s.channel <- jobId
+func (s *scheduler) AddJob(id int) {
+	s.channel <- id
 }
 
-func (s *scheduler) AddAntling(antlingId int) {
+func (s *scheduler) AddAntling(id int) {
 	msg := "adding antling %d to cluster, cluster size is now %d"
-	s.antlings = append(s.antlings, antlingId)
-	glog.Infof(msg, antlingId, len(s.antlings))
-	s.queue[antlingId] = []int{}
+	s.antlings = append(s.antlings, id)
+	glog.Infof(msg, id, len(s.antlings))
+	s.queue[id] = []*Job{}
 }
 
-func (s *scheduler) GetJobs(antlingId int) []int {
-	jobs := s.queue[antlingId]
+func (s *scheduler) GetJobs(id int) []*Job {
+	jobs := s.queue[id]
 	if jobs != nil {
 		return jobs
 	} else {
-		return []int{}
+		return []*Job{}
 	}
 }

@@ -10,8 +10,8 @@ import (
 )
 
 type Antling struct {
-	Id   int   `json:"id"`
-	Jobs []int `json:"jobs"`
+	Id   int    `json:"id"`
+	Jobs []*Job `json:"jobs"`
 }
 
 type Antlings struct {
@@ -24,7 +24,7 @@ func antlingPost(w http.ResponseWriter, r *http.Request) {
 	query += "DEFAULT VALUES "
 	query += "RETURNING anthive.antling.id"
 
-	a := &Antling{0, []int{}}
+	a := &Antling{0, []*Job{}}
 	err = db.Conn().QueryRow(query).Scan(&a.Id)
 	if err != nil {
 		glog.Errorln(err)
