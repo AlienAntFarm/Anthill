@@ -100,7 +100,7 @@ func (s *scheduler) start() {
 			return
 		}
 
-		s.queue[id] = append(s.queue[id], &Job{job})
+		s.queue[id] = append(s.queue[id], &Job{Id: job})
 	}
 }
 
