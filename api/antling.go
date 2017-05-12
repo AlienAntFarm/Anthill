@@ -82,8 +82,51 @@ func antlingGetId(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func antlingPatchId(w http.ResponseWriter, r *http.Request) {
+	id, _ := strconv.Atoi(mux.Vars(r)["id"])
+	antling := &structs.Antling{}
+
+	// retrieve objects from request (an antling with a list of jobs)
+	err := utils.Decode(r, antling)
+	if err == nil && antling.Id != id {
+		err = &utils.UnmatchingIds{[2]int{antling.Id, id}}
+	}
+	if err != nil {
+		glog.Errorf("%s", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	// compare jobs statuses to not overwhelm the scheduler channel
+	helper := make(map[int]*structs.Job, len(antling.Jobs))
+	for _, job := range antling.Jobs { // BEWARE: Do not modify jobs from scheduler
+		job.IdAntling = id
+		helper[job.Id] = job
+	}
+
+	// get over sent jobs to check for updates
+	for _, job := range Scheduler.GetJobs(id) {
+		if j, ok := helper[job.Id]; !ok {
+			// unconsistent state
+			glog.Errorf("job %d from antling %d, does not exists in scheduler", id, antling.Id)
+			return
+		} else if j.State == job.State {
+			// state has not changed so we remove it from the array
+			delete(helper, job.Id)
+		}
+	}
+
+	// send jobs to update to the scheduler
+	for id, job := range helper {
+		if glog.V(2) {
+			glog.Infof("Updating state of job %d", id)
+		}
+		Scheduler.ProcessJob(job)
+	}
+}
+
 func init() {
 	Router.HandleFunc("/antlings", antlingPost).Methods("POST")
 	Router.HandleFunc("/antlings", antlingGet).Methods("GET")
 	Router.HandleFunc("/antlings/{id:[0-9]+}", antlingGetId).Methods("GET")
+	Router.HandleFunc("/antlings/{id:[0-9]+}", antlingPatchId).Methods("PATCH")
 }

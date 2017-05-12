@@ -15,8 +15,8 @@ var Scheduler *scheduler
 
 type scheduler struct {
 	antlings []int
-	queue    map[int][]*structs.Job
-	channel  chan int
+	queue    map[int]map[int]*structs.Job
+	channel  chan *structs.Job
 	seed     *rand.Rand
 }
 
@@ -31,8 +31,13 @@ func InitScheduler() {
 
 func newScheduler() *scheduler {
 	glog.Infoln("init scheduler")
+
+	id := 0
 	antlings := []int{}
-	queue := make(map[int][]*structs.Job)
+	queue := make(map[int]map[int]*structs.Job)
+	channel := make(chan *structs.Job, 1)
+	seed := rand.New(rand.NewSource(time.Now().UnixNano()))
+	s := &scheduler{antlings, queue, channel, seed}
 
 	query := "SELECT anthive.antling.id "
 	query += "FROM anthive.antling"
@@ -43,16 +48,14 @@ func newScheduler() *scheduler {
 	defer rows.Close()
 
 	for rows.Next() {
-		var antlingId int
-		err = rows.Scan(&antlingId)
+		err = rows.Scan(&id)
 		if err != nil {
 			glog.Fatalln(err)
 		}
-		antlings = append(antlings, antlingId)
-		queue[antlingId] = []*structs.Job{}
+		s.AddAntling(id)
 	}
 
-	query = "SELECT id, fk_antling "
+	query = "SELECT id, state, fk_antling "
 	query += "FROM anthive.job "
 	query += "WHERE fk_antling IS NOT NULL"
 	rows, err = db.Conn().Query(query)
@@ -62,65 +65,74 @@ func newScheduler() *scheduler {
 	defer rows.Close()
 
 	for rows.Next() {
-		var id int
 		job := &structs.Job{}
-		err = rows.Scan(&job.Id, &id)
+		err = rows.Scan(&job.Id, &job.State, &job.IdAntling)
 		if err != nil {
 			glog.Fatalln(err)
 		}
-		queue[id] = append(queue[id], job)
+		queue[job.IdAntling][job.Id] = job
 		msg := "retrieved job %d from db and assign it to antling %d"
-		glog.Infof(msg, job.Id, id)
+		glog.Infof(msg, job.Id, job.IdAntling)
 	}
-
-	r := rand.New(rand.NewSource(time.Now().UnixNano()))
-	s := &scheduler{antlings, queue, make(chan int, 1), r}
 
 	return s
 }
 
 func (s *scheduler) start() {
 	glog.Infoln("starting scheduler")
-	query := "UPDATE anthive.job "
-	query += "SET fk_antling = $1 "
-	query += "WHERE anthive.job.id = $2"
 
+	queryAssign := "UPDATE anthive.job "
+	queryAssign += "SET fk_antling = $1"
+	queryAssign += "WHERE anthive.job.id = $2"
+
+	queryUpdate := "UPDATE anthive.job "
+	queryUpdate += "SET state = $1 "
+	queryUpdate += "WHERE anthive.job.id = $2"
+
+	var row *sql.Row
 	for job := range s.channel {
 		// if no antling, just pass
 		if len(s.antlings) == 0 {
 			continue
 		}
-		// just choose an antling randomly and assign it the job
-		id := s.antlings[s.seed.Intn(len(s.antlings))]
-		glog.Infof("adding job %d to antling %d", job, id)
+		if job.IdAntling == 0 {
+			// just choose an antling randomly and assign it the job
+			job.IdAntling = s.antlings[s.seed.Intn(len(s.antlings))]
 
-		row := db.Conn().QueryRow(query, id, job)
+			glog.Infof("adding job %d to antling %d", job.Id, job.IdAntling)
+			row = db.Conn().QueryRow(queryAssign, job.IdAntling, job.Id)
+		} else {
+			// if job already assigned we are running updates
+			glog.Infof("updating job %d to state %s", job.Id, structs.JOB_STATES[int(job.State)])
+			row = db.Conn().QueryRow(queryUpdate, job.State, job.Id)
+		}
 		err := row.Scan()
 		if err != nil && err != sql.ErrNoRows {
 			glog.Errorln(err)
 			return
 		}
+		s.queue[job.IdAntling][job.Id] = job
 
-		s.queue[id] = append(s.queue[id], &structs.Job{Id: job})
 	}
 }
 
-func (s *scheduler) AddJob(id int) {
-	s.channel <- id
+func (s *scheduler) ProcessJob(job *structs.Job) {
+	s.channel <- job
 }
 
 func (s *scheduler) AddAntling(id int) {
 	msg := "adding antling %d to cluster, cluster size is now %d"
 	s.antlings = append(s.antlings, id)
 	glog.Infof(msg, id, len(s.antlings))
-	s.queue[id] = []*structs.Job{}
+	s.queue[id] = make(map[int]*structs.Job)
 }
 
 func (s *scheduler) GetJobs(id int) []*structs.Job {
-	jobs := s.queue[id]
-	if jobs != nil {
-		return jobs
-	} else {
-		return []*structs.Job{}
+	jobs := []*structs.Job{}
+	if jobsMap, ok := s.queue[id]; ok {
+		for _, job := range jobsMap {
+			jobs = append(jobs, job)
+		}
 	}
+	return jobs
 }

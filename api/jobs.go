@@ -21,7 +21,7 @@ func jobPost(w http.ResponseWriter, r *http.Request) {
 		glog.Errorln(err)
 		return
 	}
-	Scheduler.AddJob(j.Id)
+	Scheduler.ProcessJob(j)
 	err = utils.Encode(w, j)
 	if err != nil {
 		glog.Errorln(err)
