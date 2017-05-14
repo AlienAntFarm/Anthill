@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/alienantfarm/anthive/api"
+	"github.com/alienantfarm/anthive/drivers/images"
 	"github.com/alienantfarm/anthive/utils"
 	"github.com/golang/glog"
 	"github.com/spf13/cobra"
@@ -27,8 +28,20 @@ func run(cmd *cobra.Command, args []string) {
 	glog.Errorf("%s", s.ListenAndServe())
 }
 
+func runDocker2AIF(cmd *cobra.Command, args []string) {
+	if len(args) < 1 {
+		glog.Fatalf("you must specify a docker tag to build the image upon")
+	}
+	_, err := images.Docker2AIF(args[0])
+	if err != nil {
+		glog.Fatalf("%s", err)
+	}
+}
+
 func main() {
 	utils.Command.Run = run
+	utils.OCICommand.Run = runDocker2AIF
+
 	if err := utils.Command.Execute(); err != nil {
 		glog.Fatalf("%s", err)
 	}

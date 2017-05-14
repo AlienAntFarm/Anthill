@@ -24,11 +24,13 @@ type Configuration struct {
 	Assets struct {
 		Static    string `json:"static"`
 		Templates string `json:"templates"`
+		Images    string `json:"-"`
 	} `json:"assets"`
 }
 
 var (
 	verbosity int
+	sep       = string(os.PathSeparator)
 	Config    = &Configuration{}
 	Command   = &cobra.Command{
 		Use:   "anthive",
@@ -42,6 +44,8 @@ var (
 			if err != nil {
 				glog.Fatalf("when reading config file: %s", err)
 			}
+			// set Images path
+			viper.Set("Assets.Images", viper.GetString("Assets.Static")+sep+"images")
 			err = viper.Unmarshal(Config)
 			if err != nil {
 				glog.Fatalf("when unmarshalling the json: %s", err)
@@ -55,6 +59,10 @@ var (
 			glog.V(1).Infoln("debug mode enabled")
 		},
 	}
+	OCICommand = &cobra.Command{
+		Use:   "aif [docker tag]",
+		Short: "Convert a docker image to an antling compatible container",
+	}
 )
 
 func init() {
@@ -64,11 +72,13 @@ func init() {
 	Command.PersistentFlags().Bool("debug", false, debugMsg)
 	Command.PersistentFlags().CountVarP(&verbosity, "verbose", "v", verboseMsg)
 
+	Command.AddCommand(OCICommand)
+
 	viper.BindPFlag("Debug", Command.PersistentFlags().Lookup("debug"))
 	viper.Set("PROJECT", "github.com/alienantfarm/anthive")
 	viper.Set("CONFIG", "ANTHIVE_CONFIG")
 
 	viper.SetConfigName("config")
-	viper.AddConfigPath("$" + viper.GetString("CONFIG") + string(os.PathSeparator))
+	viper.AddConfigPath("$" + viper.GetString("CONFIG") + sep)
 	viper.AddConfigPath(".")
 }
