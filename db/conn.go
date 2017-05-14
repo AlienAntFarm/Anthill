@@ -12,7 +12,7 @@ import (
 var conn *sql.DB
 
 func connect() *sql.DB {
-	dbConfig := utils.Config().Database
+	dbConfig := utils.Config.Database
 	re := regexp.MustCompile("password=.* ")
 
 	connString := fmt.Sprintf(
