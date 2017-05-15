@@ -3,13 +3,14 @@ package main
 //go:generate go run include.go sql/*
 
 import (
-	"flag"
 	"github.com/alienantfarm/anthive/assets"
 	"github.com/alienantfarm/anthive/db"
+	"github.com/alienantfarm/anthive/utils"
 	"github.com/golang/glog"
 	"github.com/spf13/cobra"
-	"os"
 )
+
+var verbosity int
 
 func runAsset(assetName string) {
 	asset := assets.Get(assetName)
@@ -21,13 +22,9 @@ func runAsset(assetName string) {
 }
 
 var rootCmd = &cobra.Command{
-	Use:   "anthivectl",
-	Short: "Simple cli to deal with various part of anthive",
-	PersistentPreRun: func(cmd *cobra.Command, args []string) {
-		os.Args = os.Args[:1]
-		flag.Set("logtostderr", "true")
-		flag.Parse()
-	},
+	Use:              "anthivectl",
+	Short:            "Simple cli to deal with various part of anthive",
+	PersistentPreRun: utils.PreRun,
 }
 
 var initCmd = &cobra.Command{
@@ -59,6 +56,7 @@ func main() {
 	rootCmd.AddCommand(initCmd)
 	rootCmd.AddCommand(cleanCmd)
 	rootCmd.AddCommand(resetCmd)
+
 	if err := rootCmd.Execute(); err != nil {
 		glog.Fatalf("%s", err)
 	}

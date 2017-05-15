@@ -28,36 +28,38 @@ type Configuration struct {
 	} `json:"assets"`
 }
 
+func PreRun(cmd *cobra.Command, args []string) {
+	// reinit args for glog
+	os.Args = os.Args[:1]
+
+	// load configuration
+	err := viper.ReadInConfig()
+	if err != nil {
+		glog.Fatalf("when reading config file: %s", err)
+	}
+	// set Images path
+	viper.Set("Assets.Images", viper.GetString("Assets.Static")+sep+"images")
+	err = viper.Unmarshal(Config)
+	if err != nil {
+		glog.Fatalf("when unmarshalling the json: %s", err)
+	}
+	if Config.Debug { // debug is same as -vvvvv
+		verbosity = 5
+	}
+	flag.Set("v", strconv.Itoa(verbosity))
+	flag.Set("logtostderr", "true")
+	flag.Parse()
+	glog.V(1).Infoln("debug mode enabled")
+}
+
 var (
 	verbosity int
 	sep       = string(os.PathSeparator)
 	Config    = &Configuration{}
 	Command   = &cobra.Command{
-		Use:   "anthive",
-		Short: "Start anthive server",
-		PersistentPreRun: func(cmd *cobra.Command, args []string) {
-			// reinit args for glog
-			os.Args = os.Args[:1]
-
-			// load configuration
-			err := viper.ReadInConfig()
-			if err != nil {
-				glog.Fatalf("when reading config file: %s", err)
-			}
-			// set Images path
-			viper.Set("Assets.Images", viper.GetString("Assets.Static")+sep+"images")
-			err = viper.Unmarshal(Config)
-			if err != nil {
-				glog.Fatalf("when unmarshalling the json: %s", err)
-			}
-			if Config.Debug { // debug is same as -vvvvv
-				verbosity = 5
-			}
-			flag.Set("v", strconv.Itoa(verbosity))
-			flag.Set("logtostderr", "true")
-			flag.Parse()
-			glog.V(1).Infoln("debug mode enabled")
-		},
+		Use:              "anthive",
+		Short:            "Start anthive server",
+		PersistentPreRun: PreRun,
 	}
 	OCICommand = &cobra.Command{
 		Use:   "aif [docker tag]",
