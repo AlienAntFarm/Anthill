@@ -87,15 +87,19 @@ func antlingPatchId(w http.ResponseWriter, r *http.Request) {
 	antling := &structs.Antling{}
 
 	// retrieve objects from request (an antling with a list of jobs)
-	err := utils.Decode(r, antling)
-	if err == nil && antling.Id != id {
-		err = &utils.UnmatchingIds{[2]int{antling.Id, id}}
-	}
-	if err != nil {
+	if err := utils.Decode(r, antling); err != nil {
 		glog.Errorf("%s", err)
-		w.WriteHeader(http.StatusInternalServerError)
+		err.Dump(w)
 		return
 	}
+	// check if ids are matching, dump an error otherwise
+	if antling.Id != id {
+		errUI := &utils.UnmatchingIds{[2]int{antling.Id, id}}
+		glog.Errorf("%s", errUI)
+		errUI.Dump(w)
+		return
+	}
+
 	// compare jobs statuses to not overwhelm the scheduler channel
 	helper := make(map[int]*structs.Job, len(antling.Jobs))
 	for _, job := range antling.Jobs { // BEWARE: Do not modify jobs from scheduler

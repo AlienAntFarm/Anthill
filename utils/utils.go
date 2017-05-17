@@ -23,6 +23,28 @@ func (uct *UnexpectedContentType) Error() string {
 	)
 }
 
+func (uct *UnexpectedContentType) Dump(w http.ResponseWriter) {
+	http.Error(w, uct.Error(), http.StatusBadRequest)
+}
+
+type HttpErrorDumper interface {
+	error
+	Dump(w http.ResponseWriter)
+}
+
+type HttpError struct {
+	StatusCode int
+	error
+}
+
+func (he *HttpError) Dump(w http.ResponseWriter) {
+	http.Error(w, he.Error(), he.StatusCode)
+}
+
+func NewError500(err error) *HttpError {
+	return &HttpError{http.StatusInternalServerError, err}
+}
+
 type UnmatchingIds struct {
 	Ids [2]int
 }
@@ -33,22 +55,28 @@ func (ui *UnmatchingIds) Error() string {
 	)
 }
 
-func Encode(w http.ResponseWriter, i interface{}) error {
+func (ui *UnmatchingIds) Dump(w http.ResponseWriter) {
+	http.Error(w, ui.Error(), http.StatusBadRequest)
+}
+func Encode(w http.ResponseWriter, i interface{}) HttpErrorDumper {
 	err := json.NewEncoder(w).Encode(i)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
+		return NewError500(err)
 	} else {
 		w.Header().Add("Content-Type", MIME_JSON)
+		return nil
 	}
-	return err
 }
 
-func Decode(r *http.Request, i interface{}) error {
+func Decode(r *http.Request, i interface{}) HttpErrorDumper {
 	mime := r.Header.Get("Content-Type")
 	if mime != MIME_JSON {
 		return &UnexpectedContentType{MIME_JSON, mime}
+	} else if err := json.NewDecoder(r.Body).Decode(i); err != nil {
+		return NewError500(err)
+	} else {
+		return nil
 	}
-	return json.NewDecoder(r.Body).Decode(i)
 }
 
 // http://stackoverflow.com/questions/22892120/how-to-generate-a-random-string-of-a-fixed-length-in-golang
