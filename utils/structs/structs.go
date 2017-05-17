@@ -62,3 +62,12 @@ func (js *JobState) Scan(value interface{}) error {
 func (js JobState) Value() (driver.Value, error) {
 	return JOB_STATES[int(js)], nil
 }
+
+type Image struct {
+	Id      int    `json:"id"`
+	Archive string `json:"archive"`
+}
+
+type Images struct {
+	Images []*Image `json:"images"`
+}

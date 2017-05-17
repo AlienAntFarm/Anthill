@@ -58,6 +58,7 @@ func (ui *UnmatchingIds) Error() string {
 func (ui *UnmatchingIds) Dump(w http.ResponseWriter) {
 	http.Error(w, ui.Error(), http.StatusBadRequest)
 }
+
 func Encode(w http.ResponseWriter, i interface{}) HttpErrorDumper {
 	err := json.NewEncoder(w).Encode(i)
 	if err != nil {

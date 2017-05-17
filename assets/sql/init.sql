@@ -16,3 +16,8 @@ CREATE TABLE IF NOT EXISTS job (
   state state DEFAULT 'NEW',
   fk_antling integer references antling (id)
 );
+
+CREATE TABLE IF NOT EXISTS image (
+  id serial primary key,
+  archive varchar(10)
+);
