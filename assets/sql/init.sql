@@ -11,13 +11,15 @@ CREATE TABLE IF NOT EXISTS antling (
   id serial primary key
 );
 
-CREATE TABLE IF NOT EXISTS job (
-  id serial primary key,
-  state state DEFAULT 'NEW',
-  fk_antling integer references antling (id)
-);
-
 CREATE TABLE IF NOT EXISTS image (
   id serial primary key,
   archive varchar(10)
+);
+
+CREATE TABLE IF NOT EXISTS job (
+  id serial primary key,
+  state state DEFAULT 'NEW',
+  fk_antling integer references antling (id),
+  fk_image integer references image (id),
+  command text[]
 );

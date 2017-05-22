@@ -47,6 +47,10 @@ type Job struct {
 	Id        int      `json:"id"`
 	State     JobState `json:"state"`
 	IdAntling int      `json:"-"`
+	Image     struct {
+		Image
+		Cmd []string `json:"command"`
+	} `json:"image"`
 }
 
 type Jobs struct {
