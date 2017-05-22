@@ -15,7 +15,10 @@ type ImagePost struct {
 }
 
 func imagePost(w http.ResponseWriter, r *http.Request) {
-	ip := &ImagePost{}
+	var (
+		err error
+		ip  *ImagePost = &ImagePost{}
+	)
 	if err := utils.Decode(r, ip); err != nil {
 		glog.Errorf("%s", err)
 		err.Dump(w)
@@ -27,12 +30,14 @@ func imagePost(w http.ResponseWriter, r *http.Request) {
 		utils.NewError500(err).Dump(w)
 		return
 	}
-	query := "INSERT INTO anthive.image (file)"
+	defer func() { images.RemoveOnFail(archive, err) }()
+	query := "INSERT INTO anthive.image (archive)"
 	query += "VALUES ($1) "
 	query += "RETURNING anthive.image.id"
 
 	i := &structs.Image{Archive: archive}
-	if err := db.Conn().QueryRow(query).Scan(&i.Id); err != nil {
+
+	if err = db.Conn().QueryRow(query, archive).Scan(&i.Id); err != nil {
 		glog.Errorf("%s", err)
 		utils.NewError500(err).Dump(w)
 		return

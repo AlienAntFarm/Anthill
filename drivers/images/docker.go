@@ -78,15 +78,7 @@ func Docker2AIF(tag string) (archive string, err error) {
 	glog.Infof("Generate new image %s from docker image %s", archive, tag)
 
 	// remove the archive, to avoid creating unfinished instances
-	defer func() {
-		if err == nil {
-			return
-		}
-		// if remove fails, log the error but don't alter err
-		if err := os.Remove(archive); err != nil {
-			glog.Errorf("%s", err)
-		}
-	}()
+	defer func() { RemoveOnFail(archive, err) }()
 
 	if manifest, err = getManifest(id); err != nil {
 		return
