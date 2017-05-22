@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"path/filepath"
 )
 
 func createImage(tag string) (string, error) {
@@ -83,6 +84,5 @@ func Docker2AIF(tag string) (archive string, err error) {
 	if manifest, err = getManifest(id); err != nil {
 		return
 	}
-	err = appendManifest2Archive(manifest, archive)
-	return
+	return filepath.Base(archive), appendManifest2Archive(manifest, archive)
 }
