@@ -2,6 +2,7 @@ package structs
 
 import (
 	"database/sql/driver"
+	"encoding/json"
 	"fmt"
 )
 
@@ -23,6 +24,10 @@ type Antlings struct {
 }
 
 type JobState int
+
+func (js JobState) MarshalJSON() ([]byte, error) {
+	return json.Marshal(JOB_STATES[int(js)])
+}
 
 const (
 	JOB_NEW JobState = iota
