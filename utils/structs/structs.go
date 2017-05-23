@@ -25,8 +25,19 @@ type Antlings struct {
 
 type JobState int
 
-func (js JobState) MarshalJSON() ([]byte, error) {
-	return json.Marshal(JOB_STATES[int(js)])
+func (js *JobState) MarshalJSON() ([]byte, error) {
+	return json.Marshal(JOB_STATES[int(*js)])
+}
+
+func (js *JobState) UnmarshalJSON(data []byte) error {
+	state := string(data[1 : len(data)-1])
+	for i, s := range JOB_STATES {
+		if s == state {
+			*js = JobState(i)
+			return nil
+		}
+	}
+	return &InvalidJobState{state}
 }
 
 const (
