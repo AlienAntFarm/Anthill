@@ -3,9 +3,11 @@ package api
 import (
 	"database/sql"
 	"github.com/alienantfarm/anthive/db"
+	"github.com/alienantfarm/anthive/utils"
 	"github.com/alienantfarm/anthive/utils/structs"
 	"github.com/golang/glog"
 	"github.com/gorilla/mux"
+	"github.com/lib/pq"
 	"math/rand"
 	"time"
 )
@@ -39,9 +41,9 @@ func newScheduler() *scheduler {
 	seed := rand.New(rand.NewSource(time.Now().UnixNano()))
 	s := &scheduler{antlings, queue, channel, seed}
 
-	query := "SELECT anthive.antling.id "
-	query += "FROM anthive.antling"
-	rows, err := db.Conn().Query(query)
+	queryAntlings := "SELECT anthive.antling.id "
+	queryAntlings += "FROM anthive.antling"
+	rows, err := db.Conn().Query(queryAntlings)
 	if err != nil {
 		glog.Fatalln(err)
 	}
@@ -55,10 +57,11 @@ func newScheduler() *scheduler {
 		s.AddAntling(id)
 	}
 
-	query = "SELECT id, state, fk_antling "
-	query += "FROM anthive.job "
-	query += "WHERE fk_antling IS NOT NULL"
-	rows, err = db.Conn().Query(query)
+	queryJobs := "SELECT j.id, j.state, j.fk_antling, j.command, i.id, i.archive "
+	queryJobs += "FROM anthive.job AS j, anthive.image AS i "
+	queryJobs += "WHERE j.fk_antling IS NOT NULL AND j.fk_image = i.id"
+
+	rows, err = db.Conn().Query(queryJobs)
 	if err != nil {
 		glog.Fatalln(err)
 	}
@@ -66,7 +69,12 @@ func newScheduler() *scheduler {
 
 	for rows.Next() {
 		job := &structs.Job{}
-		err = rows.Scan(&job.Id, &job.State, &job.IdAntling)
+		image := &job.Image
+
+		err = rows.Scan(
+			&job.Id, &job.State, &job.IdAntling, pq.Array(&image.Cmd), &image.Id,
+			&image.Archive,
+		)
 		if err != nil {
 			glog.Fatalln(err)
 		}
@@ -110,6 +118,9 @@ func (s *scheduler) start() {
 		if err != nil && err != sql.ErrNoRows {
 			glog.Errorln(err)
 			return
+		}
+		if glog.V(2) {
+			glog.Infof(utils.MarshalJSON(job))
 		}
 		s.queue[job.IdAntling][job.Id] = job
 

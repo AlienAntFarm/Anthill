@@ -80,6 +80,11 @@ func Decode(r *http.Request, i interface{}) HttpErrorDumper {
 	}
 }
 
+func MarshalJSON(i interface{}) string {
+	b, _ := json.Marshal(i)
+	return string(b)
+}
+
 // http://stackoverflow.com/questions/22892120/how-to-generate-a-random-string-of-a-fixed-length-in-golang
 var src = rand.NewSource(time.Now().UnixNano())
 

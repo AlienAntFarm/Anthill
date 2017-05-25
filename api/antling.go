@@ -75,6 +75,9 @@ func antlingGetId(w http.ResponseWriter, r *http.Request) {
 		glog.Errorln(err)
 		return
 	}
+	if glog.V(2) {
+		glog.Infof(utils.MarshalJSON(a))
+	}
 	err = utils.Encode(w, a)
 	if err != nil {
 		glog.Errorln(err)
@@ -123,6 +126,7 @@ func antlingPatchId(w http.ResponseWriter, r *http.Request) {
 	for id, job := range helper {
 		if glog.V(2) {
 			glog.Infof("Updating state of job %d", id)
+			glog.Infof(utils.MarshalJSON(job))
 		}
 		Scheduler.ProcessJob(job)
 	}

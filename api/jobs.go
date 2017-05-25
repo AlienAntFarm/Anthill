@@ -41,6 +41,9 @@ func jobPost(w http.ResponseWriter, r *http.Request) {
 		glog.Errorln(err)
 		return
 	}
+	if glog.V(2) {
+		glog.Infof(utils.MarshalJSON(j))
+	}
 	Scheduler.ProcessJob(j)
 
 	if err := utils.Encode(w, j); err != nil {
