@@ -34,15 +34,14 @@ func PreRun(cmd *cobra.Command, args []string) {
 	// reinit args for glog
 	os.Args = os.Args[:1]
 
+	// load configuration
+	err := viper.ReadInConfig()
 	if viper.GetBool("Dev") {
 		viper.Set("Assets.Images", path.Join(".", "static", "images"))
 		if err := os.MkdirAll(viper.GetString("Assets.Images"), 0755); err != nil {
 			glog.Fatalf("%s", err)
 		}
 	}
-
-	// load configuration
-	err := viper.ReadInConfig()
 	if err != nil {
 		glog.Fatalf("when reading config file: %s", err)
 	}
