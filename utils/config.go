@@ -6,39 +6,46 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"os"
+	"path"
 	"strconv"
 )
 
+const configName = "anthive.toml"
+
 type Configuration struct {
-	Debug    bool   `json:"debug"`
-	Host     string `json:"host"`
-	Port     int    `json:"port"`
-	Url      string `json:"url"`
+	Debug    bool
+	Dev      bool
+	Host     string
+	Port     int
+	Url      string
 	Database struct {
-		Name     string `json:"name"`
-		User     string `json:"user"`
-		Password string `json:"password"`
-		Host     string `json:"host"`
-		Port     int    `json:"port"`
-	} `json:"database"`
+		Name     string
+		User     string
+		Password string
+		Host     string
+		Port     int
+	}
 	Assets struct {
-		Static    string `json:"static"`
-		Templates string `json:"templates"`
-		Images    string `json:"-"`
-	} `json:"assets"`
+		Images string
+	}
 }
 
 func PreRun(cmd *cobra.Command, args []string) {
 	// reinit args for glog
 	os.Args = os.Args[:1]
 
+	if viper.GetBool("Dev") {
+		viper.Set("Assets.Images", path.Join(".", "static", "images"))
+		if err := os.MkdirAll(viper.GetString("Assets.Images"), 0755); err != nil {
+			glog.Fatalf("%s", err)
+		}
+	}
+
 	// load configuration
 	err := viper.ReadInConfig()
 	if err != nil {
 		glog.Fatalf("when reading config file: %s", err)
 	}
-	// set Images path
-	viper.Set("Assets.Images", viper.GetString("Assets.Static")+sep+"images")
 	err = viper.Unmarshal(Config)
 	if err != nil {
 		glog.Fatalf("when unmarshalling the json: %s", err)
@@ -69,18 +76,25 @@ var (
 
 func init() {
 	debugMsg := "trigger debug logs, same as -vvvvv, take precedence over verbose flag"
+	devMsg := "dev mode, instead of getting path from the system use those at $PWD"
 	verboseMsg := "verbose output, can be stacked to increase verbosity"
 
 	Command.PersistentFlags().Bool("debug", false, debugMsg)
+	Command.PersistentFlags().Bool("dev", false, devMsg)
 	Command.PersistentFlags().CountVarP(&verbosity, "verbose", "v", verboseMsg)
 
 	Command.AddCommand(OCICommand)
 
 	viper.BindPFlag("Debug", Command.PersistentFlags().Lookup("debug"))
-	viper.Set("PROJECT", "github.com/alienantfarm/anthive")
-	viper.Set("CONFIG", "ANTHIVE_CONFIG")
+	viper.BindPFlag("Dev", Command.PersistentFlags().Lookup("dev"))
 
-	viper.SetConfigName("config")
-	viper.AddConfigPath("$" + viper.GetString("CONFIG") + sep)
+	viper.Set("PROJECT", "github.com/alienantfarm/anthive")
+	// set some paths
+	viper.Set("Assets.Images", path.Join(sep, "var", "lib", "antling", "images"))
+
+	viper.SetConfigName(configName[:len(configName)-5])
+
+	viper.AddConfigPath("/etc")
 	viper.AddConfigPath(".")
+	viper.AddConfigPath("$ANTHIVE_CONFIG" + sep)
 }

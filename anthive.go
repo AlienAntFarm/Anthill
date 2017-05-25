@@ -11,12 +11,19 @@ import (
 	"time"
 )
 
+const IMAGES_PREFIX = "/static/images"
+
 func run(cmd *cobra.Command, args []string) {
 	api.InitScheduler()
 	addr := fmt.Sprintf("%s:%d", utils.Config.Host, utils.Config.Port)
 	router := api.Router
-	fileHandler := http.FileServer(http.Dir(utils.Config.Assets.Static))
-	router.PathPrefix("/static/").Handler(http.StripPrefix("/static/", fileHandler))
+
+	// serve images
+	imagesHandler := http.FileServer(http.Dir(utils.Config.Assets.Images))
+	router.PathPrefix(IMAGES_PREFIX).Handler(
+		http.StripPrefix(IMAGES_PREFIX, imagesHandler),
+	)
+
 	s := &http.Server{
 		Addr:           addr,
 		Handler:        router,
