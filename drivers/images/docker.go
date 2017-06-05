@@ -49,6 +49,9 @@ func appendManifest2Archive(manifest []byte, archive string) error {
 	if err != nil {
 		return err
 	}
+	if _, err := f.Seek(-2<<9, os.SEEK_END); err != nil { // go to the end
+		return err
+	}
 	tw := tar.NewWriter(f)
 	hdr := &tar.Header{
 		Name: "manifest.json", // TODO: put this outside
