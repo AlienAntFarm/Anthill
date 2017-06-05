@@ -15,6 +15,7 @@ go install github.com/alienantfarm/anthive
 anthivectl reset
 anthive &
 anthive_pid=$!
+rm -f static/images/*
 sleep 1 # be sure everything started
 
 curl -X POST -H "Content-Type:application/json" -d '{"tag": "alpine:latest"}' \
