@@ -13,7 +13,11 @@ CREATE TABLE IF NOT EXISTS antling (
 
 CREATE TABLE IF NOT EXISTS image (
   id serial primary key,
-  archive varchar(10)
+  archive varchar(10),
+  command text[],
+  environment text[],
+  cwd text DEFAULT '/',
+  hostname text
 );
 
 CREATE TABLE IF NOT EXISTS job (
@@ -21,5 +25,7 @@ CREATE TABLE IF NOT EXISTS job (
   state state DEFAULT 'NEW',
   fk_antling integer references antling (id),
   fk_image integer references image (id),
-  command text[]
+  command text[],
+  environment text[],
+  cwd text
 );

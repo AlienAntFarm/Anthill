@@ -22,7 +22,7 @@ curl -X POST -H "Content-Type:application/json" -d '{"tag": "alpine:latest"}' \
 	localhost:8888/images
 curl -X POST localhost:8888/antlings
 curl -X POST -H "Content-Type:application/json" \
-	-d '{"image": 1, "command": ["foo", "bar"]}' localhost:8888/jobs
+	-d '{"image": 1, "command": ["ls", "-l"], "cwd": "/etc"}' localhost:8888/jobs
 
 kill $anthive_pid
 anthive

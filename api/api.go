@@ -57,7 +57,8 @@ func newScheduler() *scheduler {
 		s.AddAntling(id)
 	}
 
-	queryJobs := "SELECT j.id, j.state, j.fk_antling, j.command, i.id, i.archive "
+	queryJobs := "SELECT j.id, j.state, j.cwd, j.command, j.environment, j.fk_antling, "
+	queryJobs += "  i.id, i.archive, i.command, i.environment, i.cwd, i.hostname "
 	queryJobs += "FROM anthive.job AS j, anthive.image AS i "
 	queryJobs += "WHERE j.fk_antling IS NOT NULL AND j.fk_image = i.id"
 
@@ -68,19 +69,19 @@ func newScheduler() *scheduler {
 	defer rows.Close()
 
 	for rows.Next() {
-		job := &structs.Job{}
-		image := &job.Image
+		j := &structs.Job{}
+		i := &j.Image
 
-		err = rows.Scan(
-			&job.Id, &job.State, &job.IdAntling, pq.Array(&image.Cmd), &image.Id,
-			&image.Archive,
-		)
-		if err != nil {
+		args := []interface{}{
+			&j.Id, &j.State, &j.Cwd, pq.Array(&j.Cmd), pq.Array(&i.Env), &j.IdAntling,
+			&i.Id, &i.Archive, pq.Array(&i.Cmd), pq.Array(&i.Env), &i.Cwd, &i.Hostname,
+		}
+		if err := rows.Scan(args...); err != nil {
 			glog.Fatalln(err)
 		}
-		queue[job.IdAntling][job.Id] = job
+		queue[j.IdAntling][j.Id] = j
 		msg := "retrieved job %d from db and assign it to antling %d"
-		glog.Infof(msg, job.Id, job.IdAntling)
+		glog.Infof(msg, j.Id, j.IdAntling)
 	}
 
 	return s

@@ -13,6 +13,8 @@ import (
 type JobPost struct {
 	ImageId int      `json:"image"`
 	Cmd     []string `json:"command"`
+	Env     []string `json:"env"`
+	Cwd     string   `json:"cwd"`
 }
 
 func jobPost(w http.ResponseWriter, r *http.Request) {
@@ -24,20 +26,23 @@ func jobPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	query := "WITH job as ("
-	query += "  INSERT INTO anthive.job (fk_image, command) "
-	query += "  VALUES ($1, $2) RETURNING anthive.job.id "
+	query := "WITH j as ("
+	query += "  INSERT INTO anthive.job (fk_image, command, environment, cwd) "
+	query += "  VALUES ($1, $2, $3, $4) RETURNING anthive.job.id "
 	query += ") "
-	query += "SELECT job.id, anthive.image.archive "
-	query += "FROM job, anthive.image "
-	query += "WHERE anthive.image.id = $1"
+	query += "SELECT j.id, i.id, i.archive, i.command, i.environment, i.cwd, i.hostname "
+	query += "FROM j, anthive.image as i "
+	query += "WHERE i.id = $1"
 
-	j := &structs.Job{}
-	j.Image.Id = jp.ImageId
-	j.Image.Cmd = jp.Cmd
+	j := &structs.Job{Cmd: jp.Cmd, Env: jp.Env, Cwd: jp.Cwd}
+	i := &j.Image
 
-	qr := db.Conn().QueryRow(query, jp.ImageId, pq.Array(jp.Cmd))
-	if err := qr.Scan(&j.Id, &j.Image.Archive); err != nil {
+	args := []interface{}{jp.ImageId, pq.Array(j.Cmd), pq.Array(j.Env), j.Cwd}
+	argsScan := []interface{}{
+		&j.Id, &i.Id, &i.Archive, pq.Array(&i.Cmd), pq.Array(&i.Env), &i.Cwd, &i.Hostname,
+	}
+
+	if err := db.Conn().QueryRow(query, args...).Scan(argsScan...); err != nil {
 		glog.Errorln(err)
 		return
 	}
@@ -54,9 +59,10 @@ func jobPost(w http.ResponseWriter, r *http.Request) {
 
 func jobGet(w http.ResponseWriter, r *http.Request) {
 
-	query := "SELECT job.id, job.state, job.command, image.id, image.archive "
-	query += "FROM anthive.job AS job, anthive.image AS image "
-	query += "WHERE image.id = job.fk_image"
+	query := "SELECT j.id, j.state, j.cwd, j.command, j.environment, "
+	query += "  i.id, i.archive, i.command, i.environment, i.cwd, i.hostname "
+	query += "FROM anthive.job AS j, anthive.image AS i "
+	query += "WHERE i.id = j.fk_image"
 
 	rows, err := db.Conn().Query(query)
 	if err != nil {
@@ -67,17 +73,19 @@ func jobGet(w http.ResponseWriter, r *http.Request) {
 
 	jobs := []*structs.Job{}
 	for rows.Next() {
-		job := &structs.Job{}
-		image := &job.Image
+		j := &structs.Job{}
+		i := &j.Image
 
-		err = rows.Scan(
-			&job.Id, &job.State, pq.Array(&image.Cmd), &image.Id, &image.Archive,
-		)
-		if err != nil {
+		args := []interface{}{
+			&j.Id, &j.State, &j.Cwd, pq.Array(&j.Cmd), pq.Array(&j.Env),
+			&i.Id, &i.Archive, pq.Array(&i.Cmd), pq.Array(&i.Env), &i.Cwd, &i.Hostname,
+		}
+
+		if err := rows.Scan(args...); err != nil {
 			glog.Errorln(err)
 			return
 		}
-		jobs = append(jobs, job)
+		jobs = append(jobs, j)
 	}
 
 	if err := utils.Encode(w, structs.Jobs{jobs}); err != nil {
@@ -91,14 +99,16 @@ func jobGetId(w http.ResponseWriter, r *http.Request) {
 	j := &structs.Job{}
 	i := &j.Image
 
-	query := "SELECT job.id, job.state, job.command, image.id, image.archive "
-	query += "FROM anthive.job AS job, anthive.image AS image "
-	query += "WHERE image.id = job.fk_image AND job.id = $1"
+	query := "SELECT j.id, j.state, j.cwd, j.command, j.environment, "
+	query += "  i.id, i.archive, i.command, i.environment, i.cwd, i.hostname "
+	query += "FROM anthive.job AS j, anthive.image AS i "
+	query += "WHERE i.id = j.fk_image AND j.id = $1"
 
-	err := db.Conn().QueryRow(query, id).Scan(
-		&j.Id, &j.State, pq.Array(&i.Cmd), &i.Id, &i.Archive,
-	)
-	if err != nil {
+	args := []interface{}{
+		&j.Id, &j.State, &j.Cwd, pq.Array(&j.Cmd), pq.Array(&j.Env),
+		&i.Id, &i.Archive, pq.Array(&i.Cmd), pq.Array(&i.Env), &i.Cwd, &i.Hostname,
+	}
+	if err := db.Conn().QueryRow(query, id).Scan(args...); err != nil {
 		glog.Errorln(err)
 		return
 	}

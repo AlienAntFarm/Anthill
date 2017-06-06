@@ -85,6 +85,9 @@ func MarshalJSON(i interface{}) string {
 	return string(b)
 }
 
+// simple alias
+var UnmarshalJSON = json.Unmarshal
+
 // http://stackoverflow.com/questions/22892120/how-to-generate-a-random-string-of-a-fixed-length-in-golang
 var src = rand.NewSource(time.Now().UnixNano())
 

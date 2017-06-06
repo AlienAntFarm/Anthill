@@ -7,6 +7,7 @@ import (
 	"github.com/alienantfarm/anthive/utils/structs"
 	"github.com/golang/glog"
 	"github.com/gorilla/mux"
+	"github.com/lib/pq"
 	"net/http"
 )
 
@@ -24,20 +25,19 @@ func imagePost(w http.ResponseWriter, r *http.Request) {
 		err.Dump(w)
 		return
 	}
-	archive, err := images.Docker2AIF(ip.Tag)
+	i, err := images.Docker2AIF(ip.Tag)
 	if err != nil {
 		glog.Errorf("%s", err)
 		utils.NewError500(err).Dump(w)
 		return
 	}
-	defer func() { images.RemoveOnFail(archive, err) }()
-	query := "INSERT INTO anthive.image (archive)"
-	query += "VALUES ($1) "
+	defer func() { images.RemoveOnFail(i.Archive, err) }()
+	query := "INSERT INTO anthive.image (archive, command, environment, cwd, hostname) "
+	query += "VALUES ($1, $2, $3, $4, $5) "
 	query += "RETURNING anthive.image.id"
 
-	i := &structs.Image{Archive: archive}
-
-	if err = db.Conn().QueryRow(query, archive).Scan(&i.Id); err != nil {
+	args := []interface{}{i.Archive, pq.Array(i.Cmd), pq.Array(i.Env), i.Cwd, i.Hostname}
+	if err = db.Conn().QueryRow(query, args...).Scan(&i.Id); err != nil {
 		glog.Errorf("%s", err)
 		utils.NewError500(err).Dump(w)
 		return
@@ -51,8 +51,8 @@ func imagePost(w http.ResponseWriter, r *http.Request) {
 }
 
 func imageGet(w http.ResponseWriter, r *http.Request) {
-	query := "SELECT anthive.image.id, anthive.image.archive "
-	query += "FROM anthive.image"
+	query := "SELECT i.id, i.archive, i.command, i.environment, i.cwd, i.hostname "
+	query += "FROM anthive.image as i"
 
 	rows, err := db.Conn().Query(query)
 	if err != nil {
@@ -64,8 +64,11 @@ func imageGet(w http.ResponseWriter, r *http.Request) {
 	images := []*structs.Image{}
 	for rows.Next() {
 		image := &structs.Image{}
-
-		if err := rows.Scan(&image.Id, &image.Archive); err != nil {
+		args := []interface{}{
+			&image.Id, &image.Archive, pq.Array(&image.Cmd), pq.Array(&image.Env),
+			&image.Cwd, &image.Hostname,
+		}
+		if err := rows.Scan(args...); err != nil {
 			glog.Errorln(err)
 			return
 		}
@@ -80,18 +83,22 @@ func imageGet(w http.ResponseWriter, r *http.Request) {
 
 func imageGetId(w http.ResponseWriter, r *http.Request) {
 	id := mux.Vars(r)["id"]
-	i := &structs.Image{}
+	image := &structs.Image{}
 
-	query := "SELECT anthive.image.id, anthive.image.archive "
-	query += "FROM anthive.image "
-	query += "WHERE anthive.image.id = $1"
+	query := "SELECT i.id, i.archive, i.command, i.environment, i.cwd, i.hostname "
+	query += "FROM anthive.image as i "
+	query += "WHERE i.id = $1"
+	args := []interface{}{
+		&image.Id, &image.Archive, pq.Array(&image.Cmd), pq.Array(&image.Env),
+		&image.Cwd, &image.Hostname,
+	}
 
-	if err := db.Conn().QueryRow(query, id).Scan(&i.Id, &i.Archive); err != nil {
+	if err := db.Conn().QueryRow(query, id).Scan(args...); err != nil {
 		glog.Errorln(err)
 		utils.NewError500(err).Dump(w)
 		return
 	}
-	if err := utils.Encode(w, i); err != nil {
+	if err := utils.Encode(w, image); err != nil {
 		glog.Errorln(err)
 		err.Dump(w)
 		return

@@ -58,10 +58,10 @@ type Job struct {
 	Id        int      `json:"id"`
 	State     JobState `json:"state"`
 	IdAntling int      `json:"-"`
-	Image     struct {
-		Image
-		Cmd []string `json:"command"`
-	} `json:"image"`
+	Cmd       []string `json:"command"`
+	Env       []string `json:"env"`
+	Cwd       string   `json:"cwd"`
+	Image     Image    `json:"image"`
 }
 
 type Jobs struct {
@@ -84,8 +84,12 @@ func (js JobState) Value() (driver.Value, error) {
 }
 
 type Image struct {
-	Id      int    `json:"id"`
-	Archive string `json:"archive"`
+	Id       int      `json:"id"`
+	Archive  string   `json:"archive"`
+	Hostname string   `json:"hostname"`
+	Cmd      []string `json:"command"`
+	Env      []string `json:"env"`
+	Cwd      string   `json:"cwd"`
 }
 
 type Images struct {
