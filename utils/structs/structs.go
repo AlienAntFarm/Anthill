@@ -6,6 +6,8 @@ import (
 	"fmt"
 )
 
+const MAX_RETRIES = 3
+
 type InvalidJobState struct {
 	State string
 }
@@ -57,6 +59,7 @@ var JOB_STATES = [...]string{
 type Job struct {
 	Id        int      `json:"id"`
 	State     JobState `json:"state"`
+	Retries   int      `json:"-"`
 	IdAntling int      `json:"-"`
 	Cmd       []string `json:"command"`
 	Env       []string `json:"env"`
