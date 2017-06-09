@@ -64,7 +64,7 @@ func antlingGet(w http.ResponseWriter, r *http.Request) {
 func antlingGetId(w http.ResponseWriter, r *http.Request) {
 	var err error
 	id, _ := strconv.Atoi(mux.Vars(r)["id"])
-	a := &structs.Antling{0, Scheduler.GetJobs(id)}
+	a := &structs.Antling{0, structs.ListJobs(Scheduler.queue[id])}
 
 	query := "SELECT anthive.antling.id "
 	query += "FROM anthive.antling "
@@ -104,28 +104,22 @@ func antlingPatchId(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// compare jobs statuses to not overwhelm the scheduler channel
-	helper := make(map[int]*structs.Job, len(antling.Jobs))
+	helper := []*structs.Job{}
+	jobs := Scheduler.queue[id]
+
 	for _, job := range antling.Jobs { // BEWARE: Do not modify jobs from scheduler
 		job.IdAntling = id
-		helper[job.Id] = job
-	}
-
-	// get over sent jobs to check for updates
-	for _, job := range Scheduler.GetJobs(id) {
-		if j, ok := helper[job.Id]; !ok {
-			// unconsistent state
-			glog.Errorf("job %d from antling %d, does not exists in scheduler", id, antling.Id)
-			return
-		} else if j.State == job.State {
-			// state has not changed so we remove it from the array
-			delete(helper, job.Id)
+		if j, ok := jobs[job.Id]; !ok {
+			// job not here anymore just pass
+		} else if j.State != job.State {
+			helper = append(helper, job)
 		}
 	}
 
 	// send jobs to update to the scheduler
-	for id, job := range helper {
+	for _, job := range helper {
 		if glog.V(2) {
-			glog.Infof("Updating state of job %d", id)
+			glog.Infof("Updating state of job %d", job.Id)
 			glog.Infof(utils.MarshalJSON(job))
 		}
 		Scheduler.ProcessJob(job)

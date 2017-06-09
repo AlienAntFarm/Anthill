@@ -16,6 +16,14 @@ func (ijs *InvalidJobState) Error() string {
 	return fmt.Sprintf("invalid job state %s", ijs.State)
 }
 
+func ListJobs(jobs map[int]*Job) []*Job {
+	slice := []*Job{}
+	for _, job := range jobs {
+		slice = append(slice, job)
+	}
+	return slice
+}
+
 type Antling struct {
 	Id   int    `json:"id"`
 	Jobs []*Job `json:"jobs"`
@@ -27,8 +35,12 @@ type Antlings struct {
 
 type JobState int
 
+func (js JobState) String() string {
+	return JOB_STATES[int(js)]
+}
+
 func (js *JobState) MarshalJSON() ([]byte, error) {
-	return json.Marshal(JOB_STATES[int(*js)])
+	return json.Marshal(js.String())
 }
 
 func (js *JobState) UnmarshalJSON(data []byte) error {
