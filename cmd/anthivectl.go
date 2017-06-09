@@ -4,7 +4,7 @@ package main
 
 import (
 	"github.com/alienantfarm/anthive/assets"
-	"github.com/alienantfarm/anthive/db"
+	"github.com/alienantfarm/anthive/ext/db"
 	"github.com/alienantfarm/anthive/utils"
 	"github.com/golang/glog"
 	"github.com/spf13/cobra"

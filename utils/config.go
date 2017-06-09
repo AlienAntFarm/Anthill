@@ -25,6 +25,12 @@ type Configuration struct {
 		Host     string
 		Port     int
 	}
+	Minio struct {
+		User     string
+		Password string
+		Host     string
+		Port     int
+	}
 	Assets struct {
 		Images string
 	}

@@ -16,12 +16,13 @@ func (ijs *InvalidJobState) Error() string {
 	return fmt.Sprintf("invalid job state %s", ijs.State)
 }
 
-func ListJobs(jobs map[int]*Job) []*Job {
-	slice := []*Job{}
-	for _, job := range jobs {
-		slice = append(slice, job)
+type JobMap map[int]*Job
+
+func (jm JobMap) List() (jobs []*Job) {
+	for _, job := range jm {
+		jobs = append(jobs, job)
 	}
-	return slice
+	return jobs
 }
 
 type Antling struct {
