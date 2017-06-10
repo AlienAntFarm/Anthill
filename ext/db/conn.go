@@ -9,7 +9,7 @@ import (
 	"regexp"
 )
 
-var conn *sql.DB
+var client *sql.DB
 
 func connect() *sql.DB {
 	dbConfig := utils.Config.Database
@@ -31,9 +31,9 @@ func connect() *sql.DB {
 	return db
 }
 
-func Conn() *sql.DB {
-	if conn == nil {
-		conn = connect()
+func Client() *sql.DB {
+	if client == nil {
+		client = connect()
 	}
-	return conn
+	return client
 }

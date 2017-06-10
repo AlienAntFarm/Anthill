@@ -17,7 +17,7 @@ func (i *Image) Create() error {
 		i.Archive, pq.Array(i.Cmd), pq.Array(i.Env), i.Cwd, i.Hostname,
 	}
 
-	return Conn().QueryRow(query, args...).Scan(&i.Id)
+	return Client().QueryRow(query, args...).Scan(&i.Id)
 }
 
 func (i *Image) Get(id string) error {
@@ -29,7 +29,7 @@ func (i *Image) Get(id string) error {
 		&i.Id, &i.Archive, pq.Array(&i.Cmd), pq.Array(&i.Env), &i.Cwd, &i.Hostname,
 	}
 
-	return Conn().QueryRow(query, id).Scan(args...)
+	return Client().QueryRow(query, id).Scan(args...)
 }
 
 type Images structs.Images
@@ -40,7 +40,7 @@ func (i *Images) Get() (err error) {
 	query := "SELECT i.id, i.archive, i.command, i.environment, i.cwd, i.hostname "
 	query += "FROM anthive.image as i"
 
-	if rows, err = Conn().Query(query); err != nil {
+	if rows, err = Client().Query(query); err != nil {
 		return
 	}
 	defer rows.Close()

@@ -15,7 +15,7 @@ var verbosity int
 func runAsset(assetName string) {
 	asset := assets.Get(assetName)
 	glog.Infof("\n%s", asset)
-	_, err := db.Conn().Query(asset)
+	_, err := db.Client().Query(asset)
 	if err != nil {
 		glog.Fatalf("%s", err)
 	}

@@ -12,7 +12,7 @@ func (a *Antling) Create() error {
 	query += "DEFAULT VALUES "
 	query += "RETURNING anthive.antling.id"
 
-	return Conn().QueryRow(query).Scan(&a.Id)
+	return Client().QueryRow(query).Scan(&a.Id)
 }
 
 func (a *Antling) Get(id string) error {
@@ -20,7 +20,7 @@ func (a *Antling) Get(id string) error {
 	query += "FROM anthive.antling "
 	query += "WHERE anthive.antling.id = $1"
 
-	return Conn().QueryRow(query, id).Scan(&a.Id)
+	return Client().QueryRow(query, id).Scan(&a.Id)
 }
 
 type Antlings structs.Antlings
@@ -31,7 +31,7 @@ func (a *Antlings) Get() (err error) {
 	query := "SELECT anthive.antling.id "
 	query += "FROM anthive.antling"
 
-	if rows, err = Conn().Query(query); err != nil {
+	if rows, err = Client().Query(query); err != nil {
 		return
 	}
 	defer rows.Close()

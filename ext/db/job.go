@@ -13,7 +13,7 @@ func (j *Job) UpdateAntling() error {
 	query += "SET fk_antling = $1"
 	query += "WHERE anthive.job.id = $2"
 
-	update := Conn().QueryRow(query, j.IdAntling, j.Id).Scan // quick alias
+	update := Client().QueryRow(query, j.IdAntling, j.Id).Scan // quick alias
 
 	if err := update(); err != nil && err != sql.ErrNoRows {
 		return err
@@ -26,7 +26,7 @@ func (j *Job) UpdateState() error {
 	query += "SET state = $1 "
 	query += "WHERE anthive.job.id = $2"
 
-	update := Conn().QueryRow(query, j.State, j.Id).Scan // quick alias
+	update := Client().QueryRow(query, j.State, j.Id).Scan // quick alias
 	if err := update(); err != nil && err != sql.ErrNoRows {
 		return err
 	}
@@ -48,7 +48,7 @@ func (j *Job) Create(imageId int) error {
 		&j.Id, &i.Id, &i.Archive, pq.Array(&i.Cmd), pq.Array(&i.Env), &i.Cwd, &i.Hostname,
 	}
 
-	return Conn().QueryRow(query, args...).Scan(argsScan...)
+	return Client().QueryRow(query, args...).Scan(argsScan...)
 }
 
 func (j *Job) Get(id string) (err error) {
@@ -63,7 +63,7 @@ func (j *Job) Get(id string) (err error) {
 		&j.Id, &j.State, &j.Cwd, pq.Array(&j.Cmd), pq.Array(&j.Env),
 		&i.Id, &i.Archive, pq.Array(&i.Cmd), pq.Array(&i.Env), &i.Cwd, &i.Hostname,
 	}
-	return Conn().QueryRow(query, id).Scan(args...)
+	return Client().QueryRow(query, id).Scan(args...)
 }
 
 type Jobs structs.Jobs
@@ -76,7 +76,7 @@ func (jobs *Jobs) Get(js structs.JobState) (err error) {
 	query += "FROM anthive.job AS j, anthive.image AS i "
 	query += "WHERE j.fk_image = i.id AND j.state <= $1"
 
-	if rows, err = Conn().Query(query, js); err != nil {
+	if rows, err = Client().Query(query, js); err != nil {
 		return
 	}
 	defer rows.Close()
