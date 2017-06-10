@@ -30,6 +30,7 @@ type Configuration struct {
 		Password string
 		Host     string
 		Port     int
+		SSL      bool
 	}
 	Assets struct {
 		Images string

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/alienantfarm/anthive/api"
 	"github.com/alienantfarm/anthive/drivers/images"
+	"github.com/alienantfarm/anthive/ext/minio"
 	"github.com/alienantfarm/anthive/utils"
 	"github.com/golang/glog"
 	"github.com/spf13/cobra"
@@ -17,7 +18,8 @@ func run(cmd *cobra.Command, args []string) {
 	api.InitScheduler()
 	addr := fmt.Sprintf("%s:%d", utils.Config.Host, utils.Config.Port)
 	router := api.Router
-
+	client := minio.Client()
+	glog.Infof("%q", client)
 	// serve images
 	imagesHandler := http.FileServer(http.Dir(utils.Config.Assets.Images))
 	router.PathPrefix(IMAGES_PREFIX).Handler(
