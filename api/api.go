@@ -2,6 +2,7 @@ package api
 
 import (
 	"github.com/alienantfarm/anthive/ext/db"
+	"github.com/alienantfarm/anthive/ext/minio"
 	"github.com/alienantfarm/anthive/utils"
 	"github.com/alienantfarm/anthive/utils/structs"
 	"github.com/golang/glog"
@@ -67,7 +68,10 @@ func (s *scheduler) schedule(job *db.Job) (sheduled bool, err error) {
 	}
 	// just choose an antling randomly and assign it the job
 	job.IdAntling = s.antlings[s.seed.Intn(len(s.antlings))]
-	if err = job.UpdateAntling(); err != nil {
+	if minio.Client().MakeBucket("", "us-east-1"); err != nil {
+		job.IdAntling = 0
+		return
+	} else if err = job.UpdateAntling(); err != nil {
 		job.IdAntling = 0 // reset for further scheduling
 		return
 	}
